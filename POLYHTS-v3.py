@@ -5,6 +5,62 @@ import os
 from joblib import Parallel, delayed
 import rdkit, rdkit.Chem as rdkit
 
+'''
+--------
+POLYHTS
+--------
+A high throughput screening script for computing optoelectronic and redox properties of organic polymers.
+Starting with the structures of candidate monomer units, arbitrary co-polymers can be constructed and 
+screened for light absorption, ionisation potentials, electron affinities, and solvation free energies. 
+
+Before the calculation of the above properties, a confomer search is conducted stochastically using the
+Experimental Torsion Distance Geometry with additional basic Knowledge (ETKDG) [1] approach. On the resulting
+lowest-energy confomer, structure optimisation and electronic properties are calculated using a family of 
+semi-empirical methods based on the GFN-xTB density functional tight binding method proposed by Grimme [2-4].
+
+references
+----------
+ [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
+ [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
+ [3] Comput. Theor. Chem. 2014, 1040, 45-53 
+ [4] J. Chem. Phys. 2016, 145, 054103
+
+----------------------------------------------------------
+Input parameters for high throughput screening procedure
+----------------------------------------------------------
+
+    nconfs      : Number of confomers generated in stochastic confomer search
+                  By default, this is set to 1000
+
+    monomer_dir : Directory containing .mol files of monomer units used to construct copolymers
+                  By default, this is set to a directory 'monomers' within the working directory
+
+    num_cores   : Number of cores used in (embarrassingly) parallel polymer screening
+
+    Linear calibration parameters :
+        - ip_intercept      
+        - ip_slope          
+        - ea_intercept      
+        - ea_slope          
+        - opt_gap_intercept 
+        - opt_gap_slope     
+        
+        By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
+
+'''
+
+nconfs = 1000
+monomer_dir = os.getcwd()+'/monomers/'
+num_cores = 20
+ip_intercept = 0.
+ip_slope = 1.
+ea_intercept = 0.
+ea_slope = 1.
+opt_gap_intercept = 0.
+opt_gap_slope = 1.
+
+
+
 # Generates a polymer with MTK
 def generate_polymer(unit1, unit2, length, sequence, name, monomer_dir):
 
@@ -184,53 +240,19 @@ def main(unit1, unit2, tag, nconfs, monomer_dir):
                            osc_strength.ljust(18), e_solv.ljust(5)))
 
     except (OSError, TypeError,NameError, ValueError, AttributeError) as error:
-       with open('../screened-polymers.dat', 'a+') as screened:
+        with open('../screened-polymers.dat', 'a+') as screened:
             screened.write('{0}  {1}  {2}  {3} \n'.format(
                            unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), 
                            tag.ljust(10), str(error).ljust(10)))
 
     os.chdir('../')
 
-#################################################################################
-'''
-Input parameters for high throughput screening procedure
-----------------------------------------------------------
 
-    nconfs      : Number of confomers generated in stochastic confomer search
-                  By default, this is set to 1000
-
-    monomer_dir : Directory containing .mol files of monomer units used to construct copolymers
-                  By default, this is set to a directory 'monomers' within the working directory
-
-    num_cores   : Number of cores used in (embarrassingly) parallel polymer screening
-
-    Linear calibration parameters :
-        - ip_intercept      
-        - ip_slope          
-        - ea_intercept      
-        - ea_slope          
-        - opt_gap_intercept 
-        - opt_gap_slope     
-        
-        By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
-
-'''
-
-nconfs = 1000
-monomer_dir = os.getcwd()+'/monomers/'
-num_cores = 20
-ip_intercept = 0. 
-ip_slope = 1.
-ea_intercept = 0.
-ea_slope = 1.
-opt_gap_intercept = 0.
-opt_gap_slope = 1.
-
+#--------------------------------------------------------------------------------------------------
 # Run polymer screening in parallel with number of parallel threads = num_cores
 if __name__ == "__main__":
     candidates = read_candidates('candidate_list.dat')
     with open('screened-polymers.dat', 'w') as screened:
         screened.write('Unit1       Unit2       ID          IP (eV)     EA (eV)     Opt. Gap (eV)       Osc. Strength     Solvation Energy(eV)\n')
     results = Parallel(n_jobs=num_cores)(delayed(main)(unit1, unit2, tag, nconfs, monomer_dir) for unit1, unit2, tag in candidates)
-
-#################################################################################
+#--------------------------------------------------------------------------------------------------
