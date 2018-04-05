@@ -183,9 +183,11 @@ def main(unit1, unit2, tag, nconfs, monomer_dir):
                            ip.ljust(10), ea.ljust(10), opt_gap.ljust(18), 
                            osc_strength.ljust(18), e_solv.ljust(5)))
 
-    except (OSError, TypeError,NameError, ValueError, AttributeError):
-        with open('../screened-polymers.dat', 'a+') as screened:
-            screened.write('FAILURE '+tag+'\n')
+    except (OSError, TypeError,NameError, ValueError, AttributeError) as error:
+       with open('../screened-polymers.dat', 'a+') as screened:
+            screened.write('{0}  {1}  {2}  {3} \n'.format(
+                           unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), 
+                           tag.ljust(10), str(error).ljust(10)))
 
     os.chdir('../')
 
