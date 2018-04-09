@@ -1,6 +1,6 @@
 #!/home/liam/anaconda3/bin/python3.6
 
-import mtk
+import stk
 import os
 from joblib import Parallel, delayed
 import rdkit, rdkit.Chem as rdkit
@@ -36,39 +36,43 @@ references
 Input parameters for high throughput screening procedure
 --------------------------------------------------------
 
-    nconfs         : Number of confomers generated in stochastic confomer search
-                     By default, this is set to 1000
+    nconfs           : [int] Number of confomers generated in stochastic confomer search
+                       By default, this is set to 1000
 
-    monomer_dir    : Directory containing .mol files of monomer units used to construct copolymers
-                     By default, this is set to a directory 'monomers' within the working directory
+    monomer_dir      : [str] Directory containing .mol files of monomer units used to construct copolymers
+                       By default, this is set to a directory 'monomers' within the working directory
 
-    xtb_dir        : Full path to directory containing the executable for the xtb program 
+    xtb_dir          : [str] Full path to directory containing the executable for the xtb program 
 
-    num_cores      : Number of cores used in (embarrassingly) parallel polymer screening
+    num_cores        : [int] Number of cores used in (embarrassingly) parallel polymer screening
 
-    candidate_list : Name of a file containing a list of copolymer candidates. The candidate list file
-                     must be written in the following format:
+    candidate_list   : [str] Name of a file containing a list of copolymer candidates. The candidate list file
+                       must be written in the following format:
 
-                     Unit 1    Unit 2    ID
-                     XXXX      YYYY      ZZZZ
+                       Unit 1    Unit 2    ID
+                       XXXX      YYYY      ZZZZ
 
-                     where XXXX and YYYY and four digit reference numbers corresponding to the monomer
-                     units that will make up a copolymer with ID number ZZZZ.           
+                       where XXXX and YYYY and four digit reference numbers corresponding to the monomer
+                       units that will make up a copolymer with ID number ZZZZ.           
 
-    solvent        : Choose the solvent model parameters to be used. Available parameters are within 
-                     the gbsa solvation model in GFN-xTB (acetone, acetonitrile, benzene, chcl3, cs2,
-                     dmso, ether, h2o, methanol, thf, toluene)
+    solvent          : [str] Choose the solvent model parameters to be used. Available parameters are within 
+                       the gbsa solvation model in GFN-xTB (acetone, acetonitrile, benzene, chcl3, cs2,
+                       dmso, ether, h2o, methanol, thf, toluene). If no solvent model is to be included,
+                       simply set this parameter to 'none'
  
+    intensity_cutoff : [float] Excited states with oscillator strengths below this value will be rejected. This 
+                       is to exclude excited states that will effectively not absorb light and thus 
+                       contribute to the observed optical gap
 
     Linear calibration parameters :
-        - ip_intercept      
-        - ip_slope          
-        - ea_intercept      
-        - ea_slope          
-        - opt_gap_intercept 
-        - opt_gap_slope     
+                      - [float] ip_intercept      
+                      - [float] ip_slope          
+                      - [float] ip_intercept      
+                      - [float] ea_slope          
+                      - [float] opt_gap_intercept 
+                      - [float] opt_gap_slope     
         
-        By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
+                      By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
 
 '''
 # Input Parameters 
@@ -78,7 +82,8 @@ monomer_dir = os.getcwd()+'/monomers/'
 xtb_dir = '/home/liam/software/XTB'
 num_cores = 20
 candidate_list = 'candidate_list.dat' 
-solvent = 'h2o'
+solvent = 'none'
+intensity_cutoff = 1.
 ip_intercept = 0.
 ip_slope = 1.
 ea_intercept = 0.
@@ -90,9 +95,9 @@ opt_gap_slope = 1.
 # Generates a polymer with MTK
 def generate_polymer(unit1, unit2, length, sequence, name, monomer_dir):
 
-    A = mtk.StructUnit2(monomer_dir+unit1, "bromine")
-    B = mtk.StructUnit2(monomer_dir+unit2, "bromine")
-    polymer = mtk.Polymer([A,B], mtk.Linear(sequence, [1,1], n=int(length/len(sequence))), name=name)
+    A = stk.StructUnit2(monomer_dir+unit1, "bromine")
+    B = stk.StructUnit2(monomer_dir+unit2, "bromine")
+    polymer = stk.Polymer([A,B], stk.Linear(sequence, [1,1], n=int(length/len(sequence))), name=name)
     polymer.write(name+'.mol')
 
     return polymer
@@ -137,7 +142,13 @@ def confomer_search(nconfs, name):
 def confomer_opt(lowest, id, name, solvent):
 
     os.system('babel '+id+'.mol '+id+'.xyz')
-    os.system('xtb '+id+'.xyz -opt -gbsa '+solvent+' > '+id+'-opt.out')    
+
+    if solvent == 'none':
+        os.system('xtb '+id+'.xyz -opt > '+id+'-opt.out')
+
+    else:
+        os.system('xtb '+id+'.xyz -opt -gbsa '+solvent+' > '+id+'-opt.out')    
+
     os.system('mv xtbopt.xyz '+id+'-opt.xyz')
 
     return id
@@ -146,7 +157,11 @@ def confomer_opt(lowest, id, name, solvent):
 # Calculation of IP with GFN-xTB using IP/EA fitted parameters
 def confomer_ip(id, name, solvent):
 
-    os.system('xtb '+id+'-opt.xyz -vip -gbsa '+solvent+' > '+id+'-ip.out')
+    if solvent == 'none':
+        os.system('xtb '+id+'-opt.xyz -vip > '+id+'-ip.out')
+
+    else:
+        os.system('xtb '+id+'-opt.xyz -vip -gbsa '+solvent+' > '+id+'-ip.out')
 
     with open(id+'-ip.out','r') as ip_out:
         inlines = [line.strip() for line in ip_out]
@@ -160,7 +175,11 @@ def confomer_ip(id, name, solvent):
 # Calculation of EA with GFN-xTB using IP/EA fitted parameters
 def confomer_ea(id, name, solvent):
    
-    os.system('xtb '+id+'-opt.xyz -vea -gbsa '+solvent+' > '+id+'-ea.out')
+    if solvent == 'none':
+        os.system('xtb '+id+'-opt.xyz -vea > '+id+'-ea.out')
+
+    else:
+        os.system('xtb '+id+'-opt.xyz -vea -gbsa '+solvent+' > '+id+'-ea.out')
 
     with open(id+'-ea.out','r') as ea_out:
         inlines = [line.strip() for line in ea_out]
@@ -169,6 +188,35 @@ def confomer_ea(id, name, solvent):
                 ea_xtb = float(line.split()[-1])
 
     return ea_xtb
+
+
+# Calculate optical gap and oscillator strength with sTDA-xTB
+def stda(id, name, solvent, intensity_cutoff):
+
+    if solvent == 'none':
+        os.system('xtb '+id+'-opt.xyz -gbsa '+solvent+' > '+id+'-wfn.out')
+
+    else:
+        os.system('xtb '+id+'-opt.xyz > '+id+'-wfn.out')
+
+    os.system(' cp wfn.xtb '+id+'-stda.wfn')
+    os.system('stda -xtb -e 10 > '+id+'-stda.out')
+
+    with open(id+'-stda.out','r') as stda_out:
+        inlines = [line.strip() for line in stda_out]
+
+        for line_number, line in enumerate(inlines):
+            if "state    eV      nm       fL        Rv(corr)" in line:
+                begin = line_number
+
+        for i in range(1,10):
+            s1_data = inlines[begin + i]
+            opt_gap = float(s1_data.split()[1])
+            osc_strength = s1_data.split()[3]
+            if float(osc_strength) > intensity_cutoff:
+                break
+
+    return opt_gap, osc_strength
 
 
 # Calculate pseudo-B3LYP IP values using linear regression model
@@ -193,27 +241,6 @@ def opt_gap_linearfit_convert(opt_gap, opt_gap_intercept, opt_gap_slope):
     opt_gap_b3lyp = str((opt_gap - opt_gap_intercept) / opt_gap_slope)
 
     return opt_gap_b3lyp
-
-
-# Calculate optical gap and oscillator strength with sTDA-xTB
-def stda(id, name, solvent):
-
-    os.system('xtb '+id+'-opt.xyz -gbsa '+solvent+' > '+id+'-wfn.out')
-    os.system(' cp wfn.xtb '+id+'-stda.wfn')
-    os.system('stda -xtb -e 10 > '+id+'-stda.out')
-
-    with open(id+'-stda.out','r') as stda_out:
-        inlines = [line.strip() for line in stda_out]
-
-        for line_number, line in enumerate(inlines):
-            if "state    eV      nm       fL        Rv(corr)" in line:
-                begin = line_number + 1
-
-        s1_data = inlines[begin]
-        opt_gap = float(s1_data.split()[1])
-        osc_strength = s1_data.split()[3]
-
-    return opt_gap, osc_strength
 
 
 # Pull (water) solvation energy from optimised GFN-xTB structure
@@ -244,7 +271,7 @@ def read_candidates(candidate_list):
 
 
 # Confomer screening process, performed in parallel 
-def main(unit1, unit2, tag, nconfs, monomer_dir):
+def main(unit1, unit2, tag, nconfs, solvent, intensity_cutoff, monomer_dir):
 
     name = 'Polymer-'+tag
     os.system('mkdir '+name)
@@ -260,15 +287,25 @@ def main(unit1, unit2, tag, nconfs, monomer_dir):
         id = confomer_opt(lowest, id, name,solvent)
         ip = ip_linearfit_convert(confomer_ip(id, name, solvent), ip_intercept, ip_slope)[:7]
         ea = ea_linearfit_convert(confomer_ea(id, name, solvent), ea_intercept, ea_slope)[:7]
-        opt_gap, osc_strength = stda(id, name, solvent)
+        opt_gap, osc_strength = stda(id, name, solvent, intensity_cutoff)
         opt_gap = opt_gap_linearfit_convert(opt_gap, opt_gap_intercept, opt_gap_slope)[:7]
-        e_solv = str(solv_energy(id, name))[:7]
+    
+        if solvent != 'none':
+            e_solv = str(solv_energy(id, name))[:7]
 
-        with open('../screened-polymers.dat', 'a+') as screened:
-            screened.write('{0}  {1}  {2}  {3}  {4}  {5}  {6}{7}\n'.format(
-                           unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), tag.ljust(10), 
-                           ip.ljust(10), ea.ljust(10), opt_gap.ljust(18), 
-                           osc_strength.ljust(18), e_solv.ljust(5)))
+            with open('../screened-polymers.dat', 'a+') as screened:
+                screened.write('{0}  {1}  {2}  {3}  {4}  {5}  {6}{7}\n'.format(
+                               unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), tag.ljust(10), 
+                               ip.ljust(10), ea.ljust(10), opt_gap.ljust(16), 
+                               osc_strength.ljust(18), e_solv.ljust(5)))
+
+        else:
+            with open('../screened-polymers.dat', 'a+') as screened:
+                screened.write('{0}  {1}  {2}  {3}  {4}  {5}  {6}{7}\n'.format(
+                               unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), tag.ljust(10),
+                               ip.ljust(10), ea.ljust(10), opt_gap.ljust(16),
+                               osc_strength.ljust(18), '---'.ljust(5)))
+
 
     except (OSError, TypeError,NameError, ValueError, AttributeError) as error:
         with open('../screened-polymers.dat', 'a+') as screened:
@@ -282,13 +319,30 @@ def main(unit1, unit2, tag, nconfs, monomer_dir):
 #--------------------------------------------------------------------------------------------------
 # Run polymer screening in parallel with number of parallel threads = num_cores
 if __name__ == "__main__":
+
+    valid_solvent_list = ['acetone', 'acetonitrile', 'benzene', 'chcl3', 'cs2',
+                          'dmso', 'ether', 'h2o', 'methanol', 'thf', 'toluene', 'none']
+
+    error = True
+    for solvents in valid_solvent_list:
+        if solvent in solvents:
+            error = False
+
+    if error == True:
+        print('ERROR: invalid solvent')
+        exit()
+
     candidates = read_candidates(candidate_list)
+
     os.environ['XTBHOME']= xtb_dir
+
     with open('screened-polymers.dat', 'w') as screened:
-        screened.write('Unit1       Unit2       ID          IP (eV)     EA (eV)     Opt. Gap (eV)       Osc. Strength     Solvation Energy(eV)\n')
+        screened.write('Unit1       Unit2       ID          IP (eV)     EA (eV)     Opt. Gap (eV)     Osc. Strength     Solvation Energy(eV)\n')
+
     try:
-        results = Parallel(n_jobs=num_cores)(delayed(main)(unit1, unit2, tag, nconfs, monomer_dir) for unit1, unit2, tag in candidates)
-    except:
+        results = Parallel(n_jobs=num_cores)(delayed(main)(unit1, unit2, tag, nconfs, solvent, intensity_cutoff, monomer_dir) for unit1, unit2, tag in candidates)
+
+    except (ValueError):
         print('ERROR : perhaps the candidate list file is in an invalid format')
         exit()
 #--------------------------------------------------------------------------------------------------
