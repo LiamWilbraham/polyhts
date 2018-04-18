@@ -39,8 +39,7 @@ Input parameters for high throughput screening procedure
     nconfs           : [int] Number of confomers generated in stochastic confomer search
                        By default, this is set to 1000
 
-    monomer_dir      : [str] Directory containing .mol files of monomer units used to construct copolymers
-                       By default, this is set to a directory 'monomers' within the working directory
+    length           : [int] Number of monomers in oligomer model (default = 8)
 
     xtb_dir          : [str] Full path to directory containing the executable for the xtb program 
 
@@ -50,10 +49,13 @@ Input parameters for high throughput screening procedure
                        must be written in the following format:
 
                        Unit 1    Unit 2    ID
-                       XXXX      YYYY      ZZZZ
+                       smiles1   smiles2   XXXX
 
-                       where XXXX and YYYY and four digit reference numbers corresponding to the monomer
-                       units that will make up a copolymer with ID number ZZZZ.           
+                       where smiles1 and smiles2 are SMILES strings that represent the monomer
+                       units that will make up a copolymer with ID number XXXX.     
+
+                       IMPORTANT - monomers should contain bromine atoms where they are to be connected
+                       to adjacent monomer units.       
 
     solvent          : [str] Choose the solvent model parameters to be used. Available parameters are within 
                        the gbsa solvation model in GFN-xTB (acetone, acetonitrile, benzene, chcl3, cs2,
@@ -78,7 +80,7 @@ Input parameters for high throughput screening procedure
 # Input Parameters 
 #---------------------------------------------
 nconfs = 10
-monomer_dir = os.getcwd()+'/monomers/'
+length = 8
 xtb_dir = '/home/liam/software/XTB'
 num_cores = 20
 candidate_list = 'candidate_list.dat' 
@@ -93,11 +95,20 @@ opt_gap_slope = 1.
 #---------------------------------------------
 
 # Generates a polymer with MTK
-def generate_polymer(unit1, unit2, length, sequence, name, monomer_dir):
+def generate_polymer(smiles1, smiles2, length, sequence, name):
+    
+    a = rdkit.MolFromSmiles(smiles1)
+    a = rdkit.AddHs(a)
+    rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
 
-    A = stk.StructUnit2(monomer_dir+unit1, "bromine")
-    B = stk.StructUnit2(monomer_dir+unit2, "bromine")
-    polymer = stk.Polymer([A,B], stk.Linear(sequence, [1,1], n=int(length/len(sequence))), name=name)
+    b = rdkit.MolFromSmiles(smiles2)
+    b = rdkit.AddHs(b)
+    rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
+
+    A = stk.StructUnit2.rdkit_init(a, "bromine")
+    B = stk.StructUnit2.rdkit_init(b, "bromine")
+
+    polymer = stk.Polymer([A,B], stk.Linear(sequence, [1,1], n=int(length/2)), name=name)
     polymer.write(name+'.mol')
 
     return polymer
@@ -271,16 +282,14 @@ def read_candidates(candidate_list):
 
 
 # Confomer screening process, performed in parallel 
-def main(unit1, unit2, tag, nconfs, solvent, intensity_cutoff, monomer_dir):
+def main(smiles1, smiles2, tag, nconfs, length, solvent, intensity_cutoff):
 
     name = 'Polymer-'+tag
     os.system('mkdir '+name)
     os.chdir(name)
 
     try:
-        unit1 = 'monomer_'+unit1+'.mol'
-        unit2 = 'monomer_'+unit2+'.mol'
-        generate_polymer(unit1, unit2, 8, "AB", name, monomer_dir)
+        generate_polymer(smiles1, smiles2, length, "AB", name)
  
         lowest, id = confomer_search(nconfs, name)
 
@@ -294,24 +303,20 @@ def main(unit1, unit2, tag, nconfs, solvent, intensity_cutoff, monomer_dir):
             e_solv = str(solv_energy(id, name))[:7]
 
             with open('../screened-polymers.dat', 'a+') as screened:
-                screened.write('{0}  {1}  {2}  {3}  {4}  {5}  {6}{7}\n'.format(
-                               unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), tag.ljust(10), 
-                               ip.ljust(10), ea.ljust(10), opt_gap.ljust(16), 
-                               osc_strength.ljust(18), e_solv.ljust(5)))
+                screened.write('{0}{1}{2}{3}{4}{5}{6}{7}\n'.format(
+                               tag.ljust(6), ip.ljust(8), ea.ljust(8), opt_gap.ljust(8), osc_strength.ljust(9), 
+                               e_solv.ljust(10), smiles1.ljust(60), smiles2.ljust(60)))
 
         else:
             with open('../screened-polymers.dat', 'a+') as screened:
-                screened.write('{0}  {1}  {2}  {3}  {4}  {5}  {6}{7}\n'.format(
-                               unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), tag.ljust(10),
-                               ip.ljust(10), ea.ljust(10), opt_gap.ljust(16),
-                               osc_strength.ljust(18), '---'.ljust(5)))
+                screened.write('{0}{1}{2}{3}{4}{5}{6}{7}\n'.format(
+                               tag.ljust(6), ip.ljust(8), ea.ljust(8), opt_gap.ljust(8), osc_strength.ljust(9),
+                               ('-----').ljust(10), smiles1.ljust(60), smiles2.ljust(60)))
 
 
     except (OSError, TypeError,NameError, ValueError, AttributeError) as error:
         with open('../screened-polymers.dat', 'a+') as screened:
-            screened.write('{0}  {1}  {2}  {3} \n'.format(
-                           unit1[-8:-4].ljust(10), unit2[-8:-4].ljust(10), 
-                           tag.ljust(10), str(error).ljust(10)))
+            screened.write('{0} ERROR: {1}\n'.format(tag.ljust(6), str(error).ljust(42)))
 
     os.chdir('../')
 
@@ -337,10 +342,10 @@ if __name__ == "__main__":
     os.environ['XTBHOME']= xtb_dir
 
     with open('screened-polymers.dat', 'w') as screened:
-        screened.write('Unit1       Unit2       ID          IP (eV)     EA (eV)     Opt. Gap (eV)     Osc. Strength     Solvation Energy(eV)\n')
+        screened.write('ID    IP      EA      Gap     F        E Solv.   Unit1                                                       Unit2          \n')
 
     try:
-        results = Parallel(n_jobs=num_cores)(delayed(main)(unit1, unit2, tag, nconfs, solvent, intensity_cutoff, monomer_dir) for unit1, unit2, tag in candidates)
+        results = Parallel(n_jobs=num_cores)(delayed(main)(smiles1, smiles2, tag, nconfs, length, solvent, intensity_cutoff) for smiles1, smiles2, tag in candidates)
 
     except (ValueError):
         print('ERROR : perhaps the candidate list file is in an invalid format')
