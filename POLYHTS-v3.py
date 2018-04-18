@@ -84,8 +84,8 @@ length = 8
 xtb_dir = '/home/liam/software/XTB'
 num_cores = 20
 candidate_list = 'candidate_list.dat' 
-solvent = 'none'
-intensity_cutoff = 1.
+solvent = 'benzene'
+intensity_cutoff = 0.5
 ip_intercept = 0.
 ip_slope = 1.
 ea_intercept = 0.
@@ -272,7 +272,6 @@ def read_candidates(candidate_list):
     try:
         with open(candidate_list, 'r') as candidates:
             candidate_list = [line.split() for line in candidates]        
-            candidate_list = candidate_list[1:]
 
     except FileNotFoundError:
         print('ERROR : no list of candidates provided')
