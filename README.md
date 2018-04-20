@@ -26,7 +26,7 @@ references
 
 requirements
 ------------
-rdkit     http://www.rdkit.org/
+rdkit     http://www.rdkit.org/\n
 stk       https://github.com/supramolecular-toolkit/stk
 openbabel http://openbabel.org/wiki/Main_Page
 xtb       https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/xtb/xtb
@@ -75,3 +75,20 @@ Input parameters for high throughput screening procedure
         
                       By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
 
+
+Output files and format
+-----------------------
+
+Results are formatted in a file named 'screened-polymers.dat':
+
+ID    IP      EA      Gap     F        E Solv.   Unit1                                       Unit2          
+0001  5.7464  3.5208  3.3690  7.0874   -3.0087   C1=CC2=C(C=C1Br)S(=O)(=O)C3=C2C=CC(=C3)Br   C1=C(SC(=N1)Br)Br                                           
+
+ID = polymer ID number
+IP = ionisation potential (in V)
+EA = electron affinity (in V)
+GAP = optical gap (in eV)
+F = oscillator strength
+E. Solv = solvation free energy (in eV)
+Unit1 = smiles string representing the first monomer unit
+Unit2 = smiles string representing the second monomer unit
