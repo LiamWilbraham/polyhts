@@ -26,7 +26,7 @@ references
 
 requirements
 ------------
-* rdkit     http://www.rdkit.org/\n
+* rdkit     http://www.rdkit.org/
 * stk       https://github.com/supramolecular-toolkit/stk
 * openbabel http://openbabel.org/wiki/Main_Page
 * xtb       https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/xtb/xtb
