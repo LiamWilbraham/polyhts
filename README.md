@@ -79,16 +79,16 @@ Input parameters for high throughput screening procedure
 Output files and format
 -----------------------
 
-Results are formatted in a file named 'screened-polymers.dat':
+    Results are formatted in a file named 'screened-polymers.dat':
 
-ID    IP      EA      Gap     F        E Solv.   Unit1                                       Unit2          
-0001  5.7464  3.5208  3.3690  7.0874   -3.0087   C1=CC2=C(C=C1Br)S(=O)(=O)C3=C2C=CC(=C3)Br   C1=C(SC(=N1)Br)Br                                           
+    ID    IP      EA      Gap     F        E Solv.   Unit1                                       Unit2          
+    0001  5.7464  3.5208  3.3690  7.0874   -3.0087   C1=CC2=C(C=C1Br)S(=O)(=O)C3=C2C=CC(=C3)Br   C1=C(SC(=N1)Br)Br                                           
 
-ID = polymer ID number
-IP = ionisation potential (in V)
-EA = electron affinity (in V)
-GAP = optical gap (in eV)
-F = oscillator strength
-E. Solv = solvation free energy (in eV)
-Unit1 = smiles string representing the first monomer unit
-Unit2 = smiles string representing the second monomer unit
+* ID = polymer ID number
+* IP = ionisation potential (in V)
+* EA = electron affinity (in V)
+* GAP = optical gap (in eV)
+* F = oscillator strength
+* E. Solv = solvation free energy (in eV)
+* Unit1 = smiles string representing the first monomer unit
+* Unit2 = smiles string representing the second monomer unit
