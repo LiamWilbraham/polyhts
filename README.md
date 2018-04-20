@@ -19,18 +19,18 @@ electronic structure method. This can be done automatically by providing linear 
 
 references
 ----------
- [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
- [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
- [3] Comput. Theor. Chem. 2014, 1040, 45-53 
- [4] J. Chem. Phys. 2016, 145, 054103
+* [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
+* [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
+* [3] Comput. Theor. Chem. 2014, 1040, 45-53 
+* [4] J. Chem. Phys. 2016, 145, 054103
 
 requirements
 ------------
-rdkit     http://www.rdkit.org/\n
-stk       https://github.com/supramolecular-toolkit/stk
-openbabel http://openbabel.org/wiki/Main_Page
-xtb       https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/xtb/xtb
-stda      https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/stda/stda
+* rdkit     http://www.rdkit.org/\n
+* stk       https://github.com/supramolecular-toolkit/stk
+* openbabel http://openbabel.org/wiki/Main_Page
+* xtb       https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/xtb/xtb
+* stda      https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/stda/stda
 
 Input parameters for high throughput screening procedure
 --------------------------------------------------------
