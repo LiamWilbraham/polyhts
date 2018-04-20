@@ -1,5 +1,5 @@
 
-POLYHTS
+POLYHTS :sunny:
 --------
 A high throughput screening script for computing optoelectronic and redox properties of organic polymers.
 Starting with the structures of candidate monomer units, arbitrary co-polymers can be constructed and 
