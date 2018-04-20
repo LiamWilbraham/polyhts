@@ -79,12 +79,12 @@ Input parameters for high throughput screening procedure
 '''
 # Input Parameters 
 #---------------------------------------------
-nconfs = 10
+nconfs = 500
 length = 8
 xtb_dir = '/home/liam/software/XTB'
 num_cores = 20
 candidate_list = 'candidate_list.dat' 
-solvent = 'benzene'
+solvent = 'h2o'
 intensity_cutoff = 0.5
 ip_intercept = 0.
 ip_slope = 1.
@@ -103,7 +103,7 @@ def generate_polymer(smiles1, smiles2, length, sequence, name):
 
     b = rdkit.MolFromSmiles(smiles2)
     b = rdkit.AddHs(b)
-    rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
+    rdkit.AllChem.EmbedMolecule(b, rdkit.AllChem.ETKDG())
 
     A = stk.StructUnit2.rdkit_init(a, "bromine")
     B = stk.StructUnit2.rdkit_init(b, "bromine")
@@ -313,7 +313,7 @@ def main(smiles1, smiles2, tag, nconfs, length, solvent, intensity_cutoff):
                                ('-----').ljust(10), smiles1.ljust(60), smiles2.ljust(60)))
 
 
-    except (OSError, TypeError,NameError, ValueError, AttributeError) as error:
+    except Exception as error:
         with open('../screened-polymers.dat', 'a+') as screened:
             screened.write('{0} ERROR: {1}\n'.format(tag.ljust(6), str(error).ljust(42)))
 
