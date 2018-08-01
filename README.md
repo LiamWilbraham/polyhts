@@ -27,7 +27,7 @@ For example, we can start a `Session` in which we will construct polymers with 2
 session = polyhts.Session('my_session', 2, 10, solvent='benzene')  
 ```
 
-### Combinatorial Screening
+### 1. Combinatorial Screening
 Within this session, we can screen all combinations of pre-supplied monomer unit SMILES from a text file:
 ```python
 session.screen('smiles-list.txt', nprocs=20)      
@@ -42,15 +42,17 @@ where `smiles-list.txt` has the format:
  .     .
 ```
 
-### Fix one monomer, screen possible co-monomers
+### 2. Fix one monomer, screen possible co-monomers
 If we have a particaular monomer in mind, but want to screen possible co-monomers to go with it:
 ```python
 session.screen('smiles-list.txt', nprocs=15, all_combinations=False, 
-               reference_monomer=['DBTO', 'c1c(Br)cc(Br)cc1'])```
+               reference_monomer=['DBTO', 'c1c(Br)cc(Br)cc1'])
+```
 In this case, every co-polymer will contain 'c1c(Br)cc(Br)cc1' co-polymerised with all of the monomers specified in `smiles-list.txt`.
 
-### Calculations for a Single Polymer
+### 3. Just one Polymer
 We can also calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
+
 ```python
 session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer-name')  
 ```
