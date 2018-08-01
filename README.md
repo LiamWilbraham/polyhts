@@ -1,7 +1,7 @@
 
 `polyhts` :sunny:
 --------
-High-level API for fast structural optimisation and property calculations of organic co-polymers.
+High-level API for ultra-fast structural optimisation and property calculations of organic co-polymers.
 
 `polyhts` takes base functionality from:
 
@@ -9,8 +9,8 @@ High-level API for fast structural optimisation and property calculations of org
 * `stk` : constructs linear co-polymer structures from these building blocks
 * `xtb` : optimises geometries, calculates properties
 
-Combining the above, `polyhts` can be used for ultra-fast, accurate screening of co-polymer compositions, both for property screening
-and for quick, exploratory calculations. Currently supported properties are:
+Combining the above, `polyhts` can be used for high-speed, accurate screening of organic co-polymer compositions, both for property
+screening and quick, exploratory calculations. Currently supported properties are:
 
 * Ionisation potentials (IP)
 * Electron affinities (EA)
