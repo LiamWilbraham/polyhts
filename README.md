@@ -17,8 +17,7 @@ screening and quick, exploratory calculations. Currently supported properties ar
 * Excitation energies & oscillator strengths
 * Solvation free energies
 
-# Functionality
--------------
+## Functionality
 `polyhts` calculations start by defining a `Session`, in which information like co-polymer sequence, number of conformers to be
 explored and solvent type are specified. 
 
@@ -57,17 +56,16 @@ session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer
 ```
 Following the `stk` documentation, `Br` atoms are places within SMILES strings where monomer units are to be connected to one another.
 
-Installation
-------------
+## Installation
 
-references
+## references
 ----------
 * [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
 * [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
 * [3] Comput. Theor. Chem. 2014, 1040, 45-53 
 * [4] J. Chem. Phys. 2016, 145, 054103
 
-requirements
+## requirements
 ------------
 * rdkit     http://www.rdkit.org/
 * stk       https://github.com/supramolecular-toolkit/stk
