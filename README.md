@@ -1,5 +1,5 @@
 
-#`polyhts` :sunny:
+# `polyhts` :sunny:
 --------
 High-level API for ultra-fast structural optimisation and property calculations of organic co-polymers.
 
@@ -17,7 +17,7 @@ screening and quick, exploratory calculations. Currently supported properties ar
 * Excitation energies & oscillator strengths
 * Solvation free energies
 
-#Functionality
+# Functionality
 -------------
 `polyhts` calculations start by defining a `Session`, in which information like co-polymer sequence, number of conformers to be
 explored and solvent type are specified. 
