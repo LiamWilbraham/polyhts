@@ -30,10 +30,20 @@ Within this session, we can screen all combinations of pre-supplied monomer unit
 ```python
 session.screen('smiles-list.txt', nprocs=20)      
 ```
-Or we can calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
+where `smiles-list.txt` has the format:
+```
+0001 smiles1
+0002 smiles2
+0003 smiles3
+ .     .
+ .     . 
+ .     .
+```
+We can also calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
 ```python
 session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer-name')  
 ```
+Following the `stk` documentation, `Br` atoms are places within SMILES strings where monomer units are to be connected to one another.
 
 Installation
 ------------
