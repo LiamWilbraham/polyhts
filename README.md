@@ -45,9 +45,9 @@ where `smiles-list.txt` has the format:
 ### 2. Fix one monomer, screen possible co-monomers
 If we have a particaular monomer in mind, but want to screen possible co-monomers to go with it:
 ```python
-session.screen('smiles-list.txt', nprocs=15, all_combinations=False, reference_monomer=['DBTO', 'c1c(Br)cc(Br)cc1'])
+session.screen('smiles-list.txt', nprocs=15, all_combinations=False, reference_monomer=['0000', 'c1c(Br)cc(Br)cc1'])
 ```
-In this case, every co-polymer will contain 'c1c(Br)cc(Br)cc1' co-polymerised with all of the monomers specified in `smiles-list.txt`.
+In this case, every co-polymer will contain 'c1c(Br)cc(Br)cc1' (which has an example ID string of `0000`) co-polymerised with all of the monomers specified in `smiles-list.txt`.
 
 ### 3. Just one Polymer
 We can also calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
