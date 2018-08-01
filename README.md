@@ -5,12 +5,12 @@ High-level API for fast structural optimisation and property calculations of org
 
 `polyhts` takes base functionality from:
 
-* `rdkit` 
-* `stk`
-* `xtb` 
+* `rdkit` : transforms SMILES strings into monomer building blocks 
+* `stk` : constructs linear co-polymer structures from these building blocks
+* `xtb` : optimises geometries, calculates properties
 
-Combining the above, `polyhts` can be used for ultra-fast, accurate screening of co-polymer structures and properties. 
-Currently supported properties are:
+Combining the above, `polyhts` can be used for ultra-fast, accurate screening of co-polymer compositions, both for property screening
+and for quick, exploratory calculations. Currently supported properties are:
 
 * Ionisation potentials (IP)
 * Electron affinities (EA)
