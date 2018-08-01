@@ -17,6 +17,27 @@ and for quick, exploratory calculations. Currently supported properties are:
 * Excitation energies & oscillator strengths
 * Solvation free energies
 
+Functionality
+-------------
+`polyhts` calculations start by defining a `Session`, in which information like co-polymer sequence, number of conformers to be
+explored and solvent type are specified. 
+
+For example, we can start a `Session` in which we will construct polymers with 2 repeat units, explore 10 conformers and use an implicit solvent model for benzene:
+```python
+session = polyhts.Session('my_session', 2, 10, solvent='benzene')  
+```
+Within this session, we can screen all combinations of pre-supplied monomer unit SMILES from a text file:
+```python
+session.screen('smiles-list.txt', nprocs=20)      
+```
+Or we can calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
+```python
+session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer-name')  
+```
+
+Installation
+------------
+
 references
 ----------
 * [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
