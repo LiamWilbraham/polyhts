@@ -49,15 +49,18 @@ class Session:
 
     """
 
-    def __init__(self, name, monomers_file=None, solvent=None):
+    def __init__(self, name, n_repeat, n_confs, solvent=None):
         self.session_name = name
+        self.n_repeat = n_repeat
+        self.n_confs = n_confs
+
+        try:
+            os.makedirs(self.session_name)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
         self.solvent_info = []
-
-        os.makedirs(self.session_name)
-
-        with open(monomers_file) as f:
-            self.monomers = [line.split() for line in f]
-
         if solvent is not None:
             if solvent not in valid_solvents:
                 raise Exception('Invalid solvent choice. Valid solvents:',
@@ -66,18 +69,41 @@ class Session:
                 self.solvent_info = ['-gbsa', solvent]
 
 
-    def screen(self, n_repeat, seq, nconfs, random_select=False):
+    def calc_polymer_properties(self, smiles1, smiles2, name):
+        with cd(self.session_name):
+            try:
+                polymer = self.generate_polymer(smiles1, smiles2, name)
+                conf, E = self.conformer_search(polymer)
+                E_xtb, E_solv = self.xtb_opt(polymer)
+                vip, vea = self.xtb_calc_potentials(polymer)
+                gap, f = self.stda_calc_excitation(polymer)
+
+                print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
+
+            except Exception as e:
+                print(id1, id2, smiles1, smiles2, e)
+
+
+    def screen(self, monomers_file, nprocs=1, random_select=False):
+
+        """
+        monomers_file : :class:`str`, optional
+        A file containing a list of monomer units to be screened. This is
+        required for screening with Session.screen().
+        """
+
+        with open(monomers_file) as f:
+            monomers = [line.split() for line in f]
 
         with open(self.session_name+'/'+'screening-output', 'w') as output:
             output.write(output_header)
 
-        compositions = self.get_polymer_compositons(random_select)
-        results = Parallel(n_jobs=15)(delayed(self.screening_protocol)(
-                        n_repeat, seq, nconfs, random_select, composition)
-                        for composition in compositions)
+        compositions = self.get_polymer_compositons(monomers, random_select)
+        results = Parallel(n_jobs=nprocs)(delayed(self.screening_protocol)
+                        (composition) for composition in compositions)
 
 
-    def screening_protocol(self, n_repeat, seq, nconfs, random_select, composition):
+    def screening_protocol(self, composition):
         smiles1, id1 = composition[0][1], composition[0][0]
         smiles2, id2 = composition[1][1], composition[1][0]
         name = '{}-{}'.format(id1, id2)
@@ -90,30 +116,30 @@ class Session:
 
         with cd(self.session_name+'/'+name):
             try:
-                polymer = self.generate_polymer(smiles1, smiles2, n_repeat, seq, name)
-                conf, E = self.conformer_search(polymer, nconfs)
-                E_xtb = self.xtb_opt(polymer)
+                polymer = self.generate_polymer(smiles1, smiles2, name)
+                conf, E = self.conformer_search(polymer)
+                E_xtb, E_solv = self.xtb_opt(polymer)
                 vip, vea = self.xtb_calc_potentials(polymer)
                 gap, f = self.stda_calc_excitation(polymer)
-                property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f)
+                property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f, E_solv)
 
             except Exception as e:
                 error_log(id1, id2, smiles1, smiles2, e)
 
 
-    def get_polymer_compositons(self, random_select):
-        homopolymers = [[i, i] for i in self.monomers]
-        copolymers = list(itertools.combinations(self.monomers, 2))
-        self.compositions = homopolymers + copolymers
-        self.compositions.sort(key=lambda x: int(x[0][0]))
+    def get_polymer_compositons(self, monomers, random_select):
+        homopolymers = [[i, i] for i in monomers]
+        copolymers = list(itertools.combinations(monomers, 2))
+        compositions = homopolymers + copolymers
+        compositions.sort(key=lambda x: int(x[0][0]))
 
         if random_select:
-            shuffle(self.compositions)
+            shuffle(compositions)
 
-        return self.compositions
+        return compositions
 
 
-    def generate_polymer(self, smiles1, smiles2, n_repeat, seq, name):
+    def generate_polymer(self, smiles1, smiles2, name):
         # initialise and embed rdkit mol objects
         a = rdkit.AddHs(rdkit.MolFromSmiles(smiles1))
         rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
@@ -125,17 +151,16 @@ class Session:
         B = stk.StructUnit2.rdkit_init(b, "bromine")
 
         # construct polymer
-        polymer = stk.Polymer([A,B], stk.Linear(seq, [0,0], n=n_repeat), name=name)
+        polymer = stk.Polymer([A,B], stk.Linear("AB", [0,0], n=self.n_repeat), name=name)
         stk.rdkit_ETKDG(polymer)
 
         return polymer
 
 
-    def conformer_search(self, polymer, nconfs):
+    def conformer_search(self, polymer):
 
-        mol = polymer.mol
-        name = polymer.name
-        confs = rdkit.AllChem.EmbedMultipleConfs(mol, nconfs, rdkit.AllChem.ETKDG())
+        mol, name = polymer.mol, polymer.name
+        confs = rdkit.AllChem.EmbedMultipleConfs(mol, self.n_confs, rdkit.AllChem.ETKDG())
         rdkit.SanitizeMol(mol)
 
         lowest_energy = 10**10
@@ -162,7 +187,18 @@ class Session:
         # Optimise, extract total & solv. energy
         calc_params = ['xtb', xyzfile, '-opt'] + self.solvent_info
         output = run_calc(calc_params)
+
+        if len(self.solvent_info) > 0:
+            E_xtb  = output[-900:-100].split()[27]
+            E_solv = str(float(output[-900:-100].split()[18])*27.2114)[:6]
+        else:
+            E_xtb  = output[-900:-100].split()[29]
+            E_solv = None
+
+        # copy xtb optimised geometry to named file
         shutil.copy('xtbopt.xyz', '{}-opt.xyz'.format(name))
+
+        return E_xtb, E_solv
 
 
     def xtb_calc_potentials(self, polymer):
@@ -201,5 +237,8 @@ class Session:
 
     def __str__(self):
         string = 'Session name: ' + self.session_name + '\n'
-
+        string += 'Num. repeat units: ' + str(self.n_repeat) + '\n'
+        string += 'Num. conformers: ' + str(self.n_confs) + '\n'
+        if len(self.solvent_info) > 0:
+            string += 'Solvent: ' + self.solvent_info[1] + '\n'
         return string
