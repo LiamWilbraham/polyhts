@@ -42,3 +42,7 @@ def property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f, E_solv):
 def error_log(id1, id2, smiles1, smiles2, e):
     with open('../screening-output', 'a+') as output:
         output.write('{}\t{}\t{}\t{}\tERROR:{}\n'.format(id1, id2, smiles1, smiles2, e))
+
+
+def remove_junk():
+    os.system('rm charges charges3 energy tda.dat wfn.xtb wbo xtbopt* xtbrestart')

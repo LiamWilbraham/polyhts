@@ -4,7 +4,7 @@ import rdkit, rdkit.Chem as rdkit
 import stk
 from random import shuffle
 import subprocess as sp
-import os, errno, shutil, itertools
+import os, errno, shutil, itertools, operator
 from utils import *
 from joblib import Parallel, delayed
 
@@ -29,21 +29,24 @@ class Session:
     n_confs : :class:`int`
         Number of conformers to embed within conformer search.
 
-    monomers_file : :class:`str`, optional
-        A file containing a list of monomer units to be screened. This is
-        required for screening with Session.screen().
-
     solvent : :class:`str` (default = ``None``)
         Solvent to be applied within calculations. Solvent effects are
         applied using an implicit model.
 
-    random_select : :class:`bool` (default = ``False``)
-        Randomly select co-polymer combinations to screen from 'monomers_file'.
-        This may be useful if one requires randomly sampled compositions from
-        the overall co-polymer space.
+    Methods
+    -------
+
+    calc_polymer_properties :
+        Calculate polymer properties for a specified co-polymers
+
+    screen :
+        Calculate polymer properties for all combinations of a list of
+        monomers, represented by SMILES strings. The list of SMILES
+        should be provided via an input file (see method docs).
 
     returns
     -------
+
     str : :class:`str`
         A description of the current session.
 
@@ -70,6 +73,23 @@ class Session:
 
 
     def calc_polymer_properties(self, smiles1, smiles2, name):
+
+        """
+        Calculate properties for a specified co-polymer compositon, specified
+        using a pair of smiles strings.
+        Note that all other properties (number of repeat units, solvent,
+        number of conformers to search) are inferred from the Session class.
+
+        Parameters
+        ----------
+
+        smiles1 : :class:`str`
+            First monomer used to construct binary co-polymer structure
+
+        smiles2 : :class:`str`
+            Second monomer used to construct binary co-polymer structure
+        """
+
         with cd(self.session_name):
             try:
                 polymer = self.generate_polymer(smiles1, smiles2, name)
@@ -79,18 +99,61 @@ class Session:
                 gap, f = self.stda_calc_excitation(polymer)
 
                 print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
+                remove_junk()
 
             except Exception as e:
                 print(id1, id2, smiles1, smiles2, e)
+                remove_junk()
 
 
-    def screen(self, monomers_file, nprocs=1, random_select=False):
+    def screen(self, monomers_file, nprocs=1, reference_monomer=None,
+                all_combinations=True, random_select=False):
 
         """
-        monomers_file : :class:`str`, optional
-        A file containing a list of monomer units to be screened. This is
-        required for screening with Session.screen().
+        Parameters
+        ----------
+
+        monomers_file : :class:`str`
+            A file containing a list of monomer units to be screened.
+            All binary co-polymer compositons are screened.
+
+        nprocs : :class:`int` (default = ``1``)
+            Number of cores to be used when screening. If a number greater
+            than 1 is chosen, polymers are screened in parallel, one polymer
+            compositon per core.
+            Note that, since results are printed as they
+            are avalable, polymers compositons in the output file will
+            not be ordered. Instead, once the entire screening process is
+            complete, the output is ordered and re-writted.
+
+        all_combinations : :class:`bool` (default = ``True``)
+            Screen all combinations of monomers in 'monomers_file'. If set to
+            False, a reference monomer must be specified, which will be paired
+            with all monomers in 'monomers_file', forming the set of co-polymers
+            to be screened.
+
+        reference_monomer : :class:`list` (default = ``None``)
+            If all all_combinations is set to False, reference_monomer must be
+            specified as a list, where the first entry is the ID string of the
+            reference monomer and the seciond entry is its SMILES string.
+
+        random_select : :class:`bool` (default = ``False``)
+            Randomly select co-polymer combinations to screen from 'monomers_file'.
+            This may be useful if one requires randomly sampled compositions from
+            the overall co-polymer space.
+
+        Returns
+        -------
+        None : :class:`NoneType`
+
+        'screening-output' : file
+            Output file containing properties of screened polymer compositions
         """
+
+        if not all_combinations and reference_monomer is None:
+            raise TypeError("'reference_monomer' must be specified if 'all_combinations' is False.")
+        elif not all_combinations and len(reference_monomer) != 2:
+            raise TypeError("'reference_monomer' format should be ['id', 'smiles']")
 
         with open(monomers_file) as f:
             monomers = [line.split() for line in f]
@@ -98,16 +161,20 @@ class Session:
         with open(self.session_name+'/'+'screening-output', 'w') as output:
             output.write(output_header)
 
-        compositions = self.get_polymer_compositons(monomers, random_select)
+        if all_combinations:
+            compositions = self.get_polymer_compositons(monomers, random_select)
+        else:
+            compositions = [[reference_monomer, monomer] for monomer in monomers]
+
         results = Parallel(n_jobs=nprocs)(delayed(self.screening_protocol)
-                        (composition) for composition in compositions)
+                          (composition) for composition in compositions)
+        self.output_sort()
 
 
     def screening_protocol(self, composition):
         smiles1, id1 = composition[0][1], composition[0][0]
         smiles2, id2 = composition[1][1], composition[1][0]
         name = '{}-{}'.format(id1, id2)
-
         try:
             os.makedirs(self.session_name+'/'+name)
         except OSError as e:
@@ -122,9 +189,11 @@ class Session:
                 vip, vea = self.xtb_calc_potentials(polymer)
                 gap, f = self.stda_calc_excitation(polymer)
                 property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f, E_solv)
+                remove_junk()
 
             except Exception as e:
                 error_log(id1, id2, smiles1, smiles2, e)
+                remove_junk()
 
 
     def get_polymer_compositons(self, monomers, random_select):
@@ -234,6 +303,18 @@ class Session:
 
         return gap, f
 
+
+    def output_sort(self):
+        with open(self.session_name+'/screening-output') as f:
+            lines = [line.split() for line in f]
+            header = lines[0]
+            content = lines[1:]
+            content.sort(key = operator.itemgetter(0, 1))
+
+        with open(self.session_name+'/screening-output', 'w') as f:
+            f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*header))
+            for line in content:
+                f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*line))
 
     def __str__(self):
         string = 'Session name: ' + self.session_name + '\n'

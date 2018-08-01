@@ -12,26 +12,26 @@ import multiprocessing
 POLYHTS
 --------
 A high throughput screening script for computing optoelectronic and redox properties of organic polymers.
-Starting with the structures of candidate monomer units, arbitrary co-polymers can be constructed and 
-screened for light absorption, ionisation potentials, electron affinities, and solvation free energies. 
+Starting with the structures of candidate monomer units, arbitrary co-polymers can be constructed and
+screened for light absorption, ionisation potentials, electron affinities, and solvation free energies.
 
 Before the calculation of the above properties, a confomer search is conducted stochastically using the
 Experimental Torsion Distance Geometry with additional basic Knowledge (ETKDG) [1] approach. On the resulting
-lowest-energy confomer, structure optimisation and electronic properties are calculated using a family of 
+lowest-energy confomer, structure optimisation and electronic properties are calculated using a family of
 semi-empirical methods based on the GFN-xTB density functional tight binding method proposed by Grimme [2-4].
 By default, copolymers are modelled using a linear chain of 12 monomer units. Solvation effects can be included
 using the gbsa solvation model associated with GFN-xTB.
 
 Additonally, one may provide parameters to calibrate the computed data. For example, for a particular problem
-you might want to calibrate the semi-empirically derived properties to those computed using a higher-level 
+you might want to calibrate the semi-empirically derived properties to those computed using a higher-level
 electronic structure method. This can be done automatically by providing linear regression fit parametes
 (i.e. slopes and intercepts) to the script (see below).
 
 references
 ----------
- [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
+ [1] J. Chem. Inf. Model. 2015, 121, 2562-2574
  [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
- [3] Comput. Theor. Chem. 2014, 1040, 45-53 
+ [3] Comput. Theor. Chem. 2014, 1040, 45-53
  [4] J. Chem. Phys. 2016, 145, 054103
 
 --------------------------------------------------------
@@ -43,7 +43,7 @@ Input parameters for high throughput screening procedure
 
     length           : [int] Number of monomers in oligomer model (default = 8)
 
-    xtb_dir          : [str] Full path to directory containing the executable for the xtb program 
+    xtb_dir          : [str] Full path to directory containing the executable for the xtb program
 
     num_cores        : [int] Number of cores used in (embarrassingly) parallel polymer screening
 
@@ -54,39 +54,39 @@ Input parameters for high throughput screening procedure
                        smiles1   smiles2   XXXX
 
                        where smiles1 and smiles2 are SMILES strings that represent the monomer
-                       units that will make up a copolymer with ID number XXXX.     
+                       units that will make up a copolymer with ID number XXXX.
 
                        IMPORTANT - monomers should contain bromine atoms where they are to be connected
-                       to adjacent monomer units.       
+                       to adjacent monomer units.
 
-    solvent          : [str] Choose the solvent model parameters to be used. Available parameters are within 
+    solvent          : [str] Choose the solvent model parameters to be used. Available parameters are within
                        the gbsa solvation model in GFN-xTB (acetone, acetonitrile, benzene, chcl3, cs2,
                        dmso, ether, h2o, methanol, thf, toluene). If no solvent model is to be included,
                        simply set this parameter to 'none'
- 
-    intensity_cutoff : [float] Excited states with oscillator strengths below this value will be rejected. This 
-                       is to exclude excited states that will effectively not absorb light and thus 
+
+    intensity_cutoff : [float] Excited states with oscillator strengths below this value will be rejected. This
+                       is to exclude excited states that will effectively not absorb light and thus
                        contribute to the observed optical gap
 
     Linear calibration parameters :
-                      - [float] ip_intercept      
-                      - [float] ip_slope          
-                      - [float] ip_intercept      
-                      - [float] ea_slope          
-                      - [float] opt_gap_intercept 
-                      - [float] opt_gap_slope     
-        
+                      - [float] ip_intercept
+                      - [float] ip_slope
+                      - [float] ip_intercept
+                      - [float] ea_slope
+                      - [float] opt_gap_intercept
+                      - [float] opt_gap_slope
+
                       By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
 
 '''
-# Input Parameters 
+# Input Parameters
 #---------------------------------------------
 random_select = True
 nconfs = 500
 length = 8
 #xtb_dir = '/home/liam/software/XTB'
 num_cores = multiprocessing.cpu_count()
-candidate_list = 'candidate-list.dat' 
+candidate_list = 'candidate-list.dat'
 solvent = 'benzene'
 intensity_cutoff = 0.5
 ip_intercept = 0.
@@ -99,7 +99,7 @@ opt_gap_slope = 1.
 
 # Generates a polymer with MTK
 def generate_polymer(smiles1, smiles2, length, sequence, name):
-    
+
     a = rdkit.MolFromSmiles(smiles1)
     a = rdkit.AddHs(a)
     rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
@@ -118,7 +118,7 @@ def generate_polymer(smiles1, smiles2, length, sequence, name):
 
 # Performs confomer search with ETKDG and ranks with MMFF94
 def confomer_search(nconfs, name):
-    
+
     polymer = rdkit.MolFromMolFile(name+'.mol',sanitize=False)
     polymer_smiles = rdkit.MolToSmiles(polymer)
     polymer_new = rdkit.MolFromSmiles(polymer_smiles)
@@ -131,7 +131,7 @@ def confomer_search(nconfs, name):
     ids = rdkit.AllChem.EmbedMultipleConfs(polymer_new, nconfs, rdkit.AllChem.ETKDG())
 
     energies = []
-    confomers = []   
+    confomers = []
     for id in ids:
         conf_name = "{}-{}.mol".format(name.replace('.mol', ''), id)
         rdkit.MolToMolFile(polymer_new, conf_name, confId=id)
@@ -161,7 +161,7 @@ def confomer_opt(lowest, id, name, solvent):
         os.system('xtb '+id+'.xyz -opt > '+id+'-opt.out')
 
     else:
-        os.system('xtb '+id+'.xyz -opt -gbsa '+solvent+' > '+id+'-opt.out')    
+        os.system('xtb '+id+'.xyz -opt -gbsa '+solvent+' > '+id+'-opt.out')
 
     os.system('mv xtbopt.xyz '+id+'-opt.xyz')
 
@@ -188,7 +188,7 @@ def confomer_ip(id, name, solvent):
 
 # Calculation of EA with GFN-xTB using IP/EA fitted parameters
 def confomer_ea(id, name, solvent):
-   
+
     if solvent == 'none':
         os.system('xtb '+id+'-opt.xyz -vea > '+id+'-ea.out')
 
@@ -274,7 +274,7 @@ def read_candidates(candidate_list):
 
     try:
         with open(candidate_list, 'r') as f:
-            candidates = [line.split() for line in f]        
+            candidates = [line.split() for line in f]
 
     except FileNotFoundError:
         print('ERROR : no list of candidates provided')
@@ -288,34 +288,34 @@ def random_candidates(candidate_list):
 
     with open(candidate_list, 'r') as f:
         monomer_pool = [line.split() for line in f]
-        
+
     candidates = []
     for i in range(10000):
         monomer1 = random.choice(monomer_pool)[0]
         monomer2 = random.choice(monomer_pool)[0]
-        
+
         tag = ('%05d' % (i))
         candidates.append([monomer1, monomer2, tag])
- 
+
     with open('random-candidate-gen.dat','w') as f:
         for line in candidates:
             print(*line)
 
     return candidates
-    
 
-# Confomer screening process, performed in parallel 
+
+# Confomer screening process, performed in parallel
 def main(smiles1, smiles2, tag, nconfs, length, solvent, intensity_cutoff):
 
     name = 'Polymer-'+tag
     os.system('mkdir '+name)
     os.chdir(name)
-    
+
     print(smiles1, smiles2)
 
     try:
         generate_polymer(smiles1, smiles2, length, "AB", name)
- 
+
         lowest, id = confomer_search(nconfs, name)
 
         id = confomer_opt(lowest, id, name,solvent)
@@ -323,13 +323,13 @@ def main(smiles1, smiles2, tag, nconfs, length, solvent, intensity_cutoff):
         ea = ea_linearfit_convert(confomer_ea(id, name, solvent), ea_intercept, ea_slope)[:7]
         opt_gap, osc_strength = stda(id, name, solvent, intensity_cutoff)
         opt_gap = opt_gap_linearfit_convert(opt_gap, opt_gap_intercept, opt_gap_slope)[:7]
-    
+
         if solvent != 'none':
             e_solv = str(solv_energy(id, name))[:7]
 
             with open('../screened-polymers.dat', 'a+') as screened:
                 screened.write('{0}{1}{2}{3}{4}{5}{6}{7}\n'.format(
-                               tag.ljust(6), ip.ljust(8), ea.ljust(8), opt_gap.ljust(8), osc_strength.ljust(9), 
+                               tag.ljust(6), ip.ljust(8), ea.ljust(8), opt_gap.ljust(8), osc_strength.ljust(9),
                                e_solv.ljust(10), smiles1.ljust(60), smiles2.ljust(60)))
 
         else:
