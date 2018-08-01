@@ -1,6 +1,5 @@
 
 # `polyhts` :sunny:
---------
 High-level API for ultra-fast structural optimisation and property calculations of organic co-polymers.
 
 `polyhts` takes base functionality from:
