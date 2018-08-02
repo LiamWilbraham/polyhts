@@ -316,6 +316,7 @@ class Session:
             for line in content:
                 f.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(*line))
 
+
     def __str__(self):
         string = 'Session name: ' + self.session_name + '\n'
         string += 'Num. repeat units: ' + str(self.n_repeat) + '\n'
