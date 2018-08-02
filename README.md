@@ -1,94 +1,71 @@
 
-POLYHTS :sunny:
---------
-A high throughput screening script for computing optoelectronic and redox properties of organic polymers.
-Starting with the structures of candidate monomer units, arbitrary co-polymers can be constructed and 
-screened for light absorption, ionisation potentials, electron affinities, and solvation free energies. 
+# `polyhts` :sunny:
+Python library for ultra-fast structural optimisation and property calculations of organic co-polymers.
 
-Before the calculation of the above properties, a confomer search is conducted stochastically using the
-Experimental Torsion Distance Geometry with additional basic Knowledge (ETKDG) [1] approach. On the resulting
-lowest-energy confomer, structure optimisation and electronic properties are calculated using a family of 
-semi-empirical methods based on the GFN-xTB density functional tight binding method proposed by Grimme [2-4].
-By default, copolymers are modelled using a linear chain of 12 monomer units. Solvation effects can be included
-using the gbsa solvation model associated with GFN-xTB.
+`polyhts` takes base functionality from:
 
-Additonally, one may provide parameters to calibrate the computed data. For example, for a particular problem
-you might want to calibrate the semi-empirically derived properties to those computed using a higher-level 
-electronic structure method. This can be done automatically by providing linear regression fit parametes
-(i.e. slopes and intercepts) to the script (see below).
+* `rdkit` : transforms SMILES strings into monomer building blocks 
+* `stk` : constructs linear co-polymer structures from these building blocks
+* `xtb` : optimises geometries, calculates properties
 
-references
-----------
+Combining the above, `polyhts` can be used for high-speed, accurate screening of organic co-polymer compositions, both for property
+screening and quick, exploratory calculations. Currently supported properties are:
+
+* Ionisation potentials (IP)
+* Electron affinities (EA)
+* Excitation energies & oscillator strengths
+* Solvation free energies
+
+## Functionality
+`polyhts` calculations start by defining a `Session`, in which information like co-polymer sequence, number of conformers to be
+explored and solvent type are specified. 
+
+For example, we can start a `Session` in which we will construct polymers with 2 repeat units, explore 10 conformers and use an implicit solvent model for benzene:
+```python
+session = polyhts.Session('my_session', 2, 10, solvent='benzene')  
+```
+
+### 1. Combinatorial Screening
+Within this session, we can screen all combinations of pre-supplied monomer unit SMILES from a text file:
+```python
+session.screen('smiles-list.txt', nprocs=20)      
+```
+where `smiles-list.txt` has the format:
+```
+0001 smiles1
+0002 smiles2
+0003 smiles3
+ .     .
+ .     . 
+ .     .
+```
+
+### 2. Fix one monomer, screen possible co-monomers
+If we have a particaular monomer in mind, but want to screen possible co-monomers to go with it:
+```python
+session.screen('smiles-list.txt', nprocs=15, all_combinations=False, reference_monomer=['0000', 'c1c(Br)cc(Br)cc1'])
+```
+In this case, every co-polymer will contain `'c1c(Br)cc(Br)cc1'` (which has an example ID string of `'0000'`) co-polymerised with all of the monomers specified in `smiles-list.txt`.
+
+### 3. Just one Polymer
+We can also calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
+
+```python
+session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer-name')  
+```
+Following the `stk` documentation, `Br` atoms are places within SMILES strings where monomer units are to be connected to one another.
+
+## Installation
+
+## references
 * [1] J. Chem. Inf. Model. 2015, 121, 2562-2574 
 * [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
 * [3] Comput. Theor. Chem. 2014, 1040, 45-53 
 * [4] J. Chem. Phys. 2016, 145, 054103
 
-requirements
-------------
+## requirements
 * rdkit     http://www.rdkit.org/
 * stk       https://github.com/supramolecular-toolkit/stk
 * openbabel http://openbabel.org/wiki/Main_Page
 * xtb       https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/xtb/xtb
 * stda      https://www.chemie.uni-bonn.de/pctc/mulliken-center/software/stda/stda
-
-Input parameters for high throughput screening procedure
---------------------------------------------------------
-
-    nconfs           : [int] Number of confomers generated in stochastic confomer search
-                       By default, this is set to 1000
-
-    length           : [int] Number of monomers in oligomer model (default = 8)
-
-    xtb_dir          : [str] Full path to directory containing the executable for the xtb program 
-
-    num_cores        : [int] Number of cores used in (embarrassingly) parallel polymer screening
-
-    candidate_list   : [str] Name of a file containing a list of copolymer candidates. The candidate list file
-                       must be written in the following format:
-
-                       Unit 1    Unit 2    ID
-                       smiles1   smiles2   XXXX
-
-                       where smiles1 and smiles2 are SMILES strings that represent the monomer
-                       units that will make up a copolymer with ID number XXXX.     
-
-                       IMPORTANT - monomers should contain bromine atoms where they are to be connected
-                       to adjacent monomer units.       
-
-    solvent          : [str] Choose the solvent model parameters to be used. Available parameters are within 
-                       the gbsa solvation model in GFN-xTB (acetone, acetonitrile, benzene, chcl3, cs2,
-                       dmso, ether, h2o, methanol, thf, toluene). If no solvent model is to be included,
-                       simply set this parameter to 'none'
- 
-    intensity_cutoff : [float] Excited states with oscillator strengths below this value will be rejected. This 
-                       is to exclude excited states that will effectively not absorb light and thus 
-                       contribute to the observed optical gap
-
-    Linear calibration parameters :
-                      - [float] ip_intercept      
-                      - [float] ip_slope          
-                      - [float] ip_intercept      
-                      - [float] ea_slope          
-                      - [float] opt_gap_intercept 
-                      - [float] opt_gap_slope     
-        
-                      By default these are set to 1 and 0 for slopes and intercepts, respectively (i.e. no calibration)
-
-
-Output files and format
------------------------
-
-Results are formatted in a file named `screened-polymers.dat`:
-
-    ID    IP      EA      Gap     F        E Solv.   Unit1                                       Unit2          
-    0001  5.7464  3.5208  3.3690  7.0874   -3.0087   C1=CC2=C(C=C1Br)S(=O)(=O)C3=C2C=CC(=C3)Br   C1=C(SC(=N1)Br)Br                                           
-
-* ID = polymer ID number
-* IP = ionisation potential (in V)
-* EA = electron affinity (in V)
-* GAP = optical gap (in eV)
-* F = oscillator strength
-* E. Solv = solvation free energy (in eV)
-* Unit1 = smiles string representing the first monomer unit
-* Unit2 = smiles string representing the second monomer unit
