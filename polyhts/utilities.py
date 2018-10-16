@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 import os
 import subprocess as sp
+from rdkit import Chem
 
 valid_solvents = ['acetone', 'acetonitrile', 'benzene', 'chcl3', 'cs2',
                   'dmso', 'ether', 'h2o', 'methanol', 'thf', 'toluene']
 
-output_header = 'ID1\tID2\tIP\tEA\tS0->S1\tF\tESolv\tSmiles1\tSmiles2\n'
+output_header = 'ID IP EA S0->S1 F ESolv Smiles\n'
 
 def print_formatted_properties(name, vip, vea, gap, f, E_solv):
     print(name, ':')
@@ -15,6 +16,10 @@ def print_formatted_properties(name, vip, vea, gap, f, E_solv):
     print('F (a.u.) =', f)
     if E_solv is not None:
         print('E Solv. =', E_solv)
+
+
+def factorial(x):
+    return (1 if x==0 else x * factorial(x-1))
 
 
 @contextmanager
@@ -33,10 +38,11 @@ def run_calc(calc_params):
     return output
 
 
-def property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f, E_solv):
+def property_log(polymer, vip, vea, gap, f, E_solv):
+    smiles = Chem.MolToSmiles(Chem.RemoveHs(polymer.mol), canonical=True)
     with open('../screening-output', 'a+') as output:
-        output.write('{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n'.format(
-        id1, id2, vip, vea, gap, f, E_solv, smiles1, smiles2))
+        output.write('{} {} {} {} {} {} {}\n'.format(
+        polymer.name, vip, vea, gap, f, E_solv, smiles))
 
 
 def error_log(id1, id2, smiles1, smiles2, e):

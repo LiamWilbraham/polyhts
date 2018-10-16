@@ -5,8 +5,12 @@ import stk
 from random import shuffle
 import subprocess as sp
 import os, errno, shutil, itertools, operator
-from utils import *
 from joblib import Parallel, delayed
+import string
+import time
+import random
+from .utilities import *
+
 
 class Session:
 
@@ -22,6 +26,9 @@ class Session:
     name : :class:`str`
         Name of the session. Essentially the name of the directory into which
         all results will be placed.
+
+    length_repeat : :class:`int`
+        Number of monomers in repeat unit.
 
     n_repeat : :class:`int`
         Number of repeat units that will be used to build a polymer.
@@ -52,8 +59,9 @@ class Session:
 
     """
 
-    def __init__(self, name, n_repeat, n_confs, solvent=None):
-        self.session_name = name
+    def __init__(self, session_name, length_repeat, n_repeat, n_confs, solvent=None):
+        self.session_name = session_name
+        self.length_repeat = length_repeat
         self.n_repeat = n_repeat
         self.n_confs = n_confs
 
@@ -71,11 +79,14 @@ class Session:
             else:
                 self.solvent_info = ['-gbsa', solvent]
 
+        with open('temp', 'w') as f:
+            f.write('')
 
-    def calc_polymer_properties(self, smiles1, smiles2, name):
+
+    def calc_polymer_properties(self, smiles, name):
 
         """
-        Calculate properties for a specified co-polymer compositon, specified
+        Calculate properties for a specified co-polymer composition, specified
         using a pair of smiles strings.
         Note that all other properties (number of repeat units, solvent,
         number of conformers to search) are inferred from the Session class.
@@ -83,31 +94,33 @@ class Session:
         Parameters
         ----------
 
-        smiles1 : :class:`str`
-            First monomer used to construct binary co-polymer structure
+        smiles : :class:`list`
+            smiles used to construct polymer repeat unit
 
-        smiles2 : :class:`str`
-            Second monomer used to construct binary co-polymer structure
         """
+        monomers_dict = {}
+        permutation = []
+        for i in range(len(smiles)):
+            monomers_dict[string.ascii_uppercase[i]] = smiles[i]
+            permutation.append(string.ascii_uppercase[i])
 
         with cd(self.session_name):
-            try:
-                polymer = self.generate_polymer(smiles1, smiles2, name)
-                conf, E = self.conformer_search(polymer)
-                E_xtb, E_solv = self.xtb_opt(polymer)
-                vip, vea = self.xtb_calc_potentials(polymer)
-                gap, f = self.stda_calc_excitation(polymer)
+            #try:
+            polymer = self.generate_polymer(permutation, monomers_dict, name)
+            conf, E = self.conformer_search(polymer)
+            E_xtb, E_solv = self.xtb_opt(polymer)
+            vip, vea = self.xtb_calc_potentials(polymer)
+            gap, f = self.stda_calc_excitation(polymer)
 
-                print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
-                remove_junk()
+            print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
+            remove_junk()
 
-            except Exception as e:
-                print(id1, id2, smiles1, smiles2, e)
-                remove_junk()
+            #except Exception as e:
+            #    print(id1, id2, smiles1, smiles2, e)
+            #    remove_junk()
 
 
-    def screen(self, monomers_file, nprocs=1, reference_monomer=None,
-                all_combinations=True, random_select=False):
+    def screen(self, monomers_file, nprocs=1, reference_monomer=None, all_combinations=True):
 
         """
         Parameters
@@ -115,14 +128,14 @@ class Session:
 
         monomers_file : :class:`str`
             A file containing a list of monomer units to be screened.
-            All binary co-polymer compositons are screened.
+            All binary co-polymer compositions are screened.
 
         nprocs : :class:`int` (default = ``1``)
             Number of cores to be used when screening. If a number greater
             than 1 is chosen, polymers are screened in parallel, one polymer
-            compositon per core.
+            composition per core.
             Note that, since results are printed as they
-            are avalable, polymers compositons in the output file will
+            are avalable, polymers compositions in the output file will
             not be ordered. Instead, once the entire screening process is
             complete, the output is ordered and re-writted.
 
@@ -158,69 +171,70 @@ class Session:
         with open(monomers_file) as f:
             monomers = [line.split() for line in f]
 
+        monomers_dict = {}
+        for id, smiles in monomers:
+            monomers_dict[id] = smiles
+
         with open(self.session_name+'/'+'screening-output', 'w') as output:
             output.write(output_header)
 
-        if all_combinations:
-            compositions = self.get_polymer_compositons(monomers, random_select)
-        else:
-            compositions = [[reference_monomer, monomer] for monomer in monomers]
-
         results = Parallel(n_jobs=nprocs)(delayed(self.screening_protocol)
-                          (composition) for composition in compositions)
-        self.output_sort()
+        (permutation, monomers_dict) for permutation in self.get_polymer_compositions(monomers_dict))
 
 
-    def screening_protocol(self, composition):
-        smiles1, id1 = composition[0][1], composition[0][0]
-        smiles2, id2 = composition[1][1], composition[1][0]
-        name = '{}-{}'.format(id1, id2)
-        try:
-            os.makedirs(self.session_name+'/'+name)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+    def screening_protocol(self, permutation, monomers_dict):
+        time.sleep(1)
+        with open('temp') as f:
+            screened = [tuple(i.split()) for i in f]
 
-        with cd(self.session_name+'/'+name):
+        if permutation not in screened and permutation[::-1] not in screened:
+            with open('temp', 'a+') as f:
+                f.write(' '.join(list(permutation))+'\n')
+
+            name = '-'.join(id for id in permutation)
+
             try:
-                polymer = self.generate_polymer(smiles1, smiles2, name)
+                os.makedirs(self.session_name+'/'+name)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
+            with cd(self.session_name+'/'+name):
+                #try:
+                polymer = self.generate_polymer(permutation, monomers_dict, name)
                 conf, E = self.conformer_search(polymer)
                 E_xtb, E_solv = self.xtb_opt(polymer)
                 vip, vea = self.xtb_calc_potentials(polymer)
                 gap, f = self.stda_calc_excitation(polymer)
-                property_log(id1, id2, smiles1, smiles2, vip, vea, gap, f, E_solv)
+                property_log(polymer, vip, vea, gap, f, E_solv)
                 remove_junk()
 
-            except Exception as e:
-                error_log(id1, id2, smiles1, smiles2, e)
-                remove_junk()
+                #except Exception as e:
+                #    error_log(permutation, monomers_dict, e)
+                #    remove_junk()
 
 
-    def get_polymer_compositons(self, monomers, random_select):
-        homopolymers = [[i, i] for i in monomers]
-        copolymers = list(itertools.combinations(monomers, 2))
-        compositions = homopolymers + copolymers
-        compositions.sort(key=lambda x: int(x[0][0]))
+    def get_polymer_compositions(self, monomers_dict):
 
-        if random_select:
-            shuffle(compositions)
+        monomers = list([mon for mon in monomers_dict])
+        for combination in itertools.combinations(monomers, len(monomers)):
+            product = itertools.product(combination, repeat=self.length_repeat)
+            for item in product:
+                yield item
 
-        return compositions
+    def generate_polymer(self, permutation, monomers_dict, name):
 
+        sequence = string.ascii_uppercase[:len(permutation)]
+        isomers = [0 for i in permutation]
 
-    def generate_polymer(self, smiles1, smiles2, name):
-        # initialise and embed rdkit mol objects
-        a = rdkit.AddHs(rdkit.MolFromSmiles(smiles1))
-        rdkit.AllChem.EmbedMolecule(a, rdkit.AllChem.ETKDG())
-        b = rdkit.AddHs(rdkit.MolFromSmiles(smiles2))
-        rdkit.AllChem.EmbedMolecule(b, rdkit.AllChem.ETKDG())
+        structunits = []
+        for id in permutation:
+            smiles = rdkit.MolToSmiles(rdkit.MolFromSmiles(monomers_dict[id]), canonical=True)
+            mol = rdkit.AddHs(rdkit.MolFromSmiles(smiles))
+            rdkit.AllChem.EmbedMolecule(mol, rdkit.AllChem.ETKDG())
+            structunits.append(stk.StructUnit2.rdkit_init(mol, "bromine"))
 
-        # initialise stk StructUnit2 objects
-        A = stk.StructUnit2.rdkit_init(a, "bromine")
-        B = stk.StructUnit2.rdkit_init(b, "bromine")
-
-        # construct polymer
-        polymer = stk.Polymer([A,B], stk.Linear("AB", [0,0], n=self.n_repeat), name=name)
+        polymer = stk.Polymer(structunits, stk.Linear(sequence, isomers, n=self.n_repeat), name=name)
         stk.rdkit_ETKDG(polymer)
 
         return polymer
@@ -319,6 +333,7 @@ class Session:
 
     def __str__(self):
         string = 'Session name: ' + self.session_name + '\n'
+        string += 'Length of repeat unit: ' + str(self.length_repeat) + '\n'
         string += 'Num. repeat units: ' + str(self.n_repeat) + '\n'
         string += 'Num. conformers: ' + str(self.n_confs) + '\n'
         if len(self.solvent_info) > 0:
