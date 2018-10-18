@@ -1,11 +1,1 @@
 ID IP EA S0->S1 F ESolv Smiles
-0004-0004 7.7828 2.2648 3.264 0.0113 None c1cnc(-c2cnc(-c3cnc(-c4cnccn4)cn3)cn2)cn1
-0004-0002 8.0742 2.1180 3.785 0.1969 None N#Cc1cccc(-c2cnc(-c3ccc(-c4cnccn4)cc3C#N)cn2)c1
-0002-0002 8.2429 1.6776 4.476 0.8582 None N#Cc1cccc(-c2ccc(-c3ccc(-c4ccccc4C#N)cc3C#N)cc2C#N)c1
-0001-0004 7.4180 2.3016 3.738 3.5111 None O=S1(=O)c2ccccc2-c2ccc(-c3cnc(-c4ccc5c(c4)S(=O)(=O)c4cc(-c6cnccn6)ccc4-5)cn3)cc21
-0001-0002 7.5499 1.9741 4.177 2.8965 None N#Cc1cccc(-c2ccc3c(c2)S(=O)(=O)c2cc(-c4ccc(-c5ccc6c(c5)S(=O)(=O)c5ccccc5-6)cc4C#N)ccc2-3)c1
-0003-0002 6.8847 1.8266 3.748 0.0091 None N#Cc1cccc(-c2ccc3ccc4c(-c5ccc(-c6ccc7ccc8cccc9ccc6c7c89)cc5C#N)ccc5ccc2c3c54)c1
-0003-0004 6.7492 2.1111 3.442 2.4922 None c1cc2ccc3ccc(-c4cnc(-c5ccc6ccc7c(-c8cnccn8)ccc8ccc5c6c87)cn4)c4ccc(c1)c2c34
-0001-0001 7.1321 2.1835 4.015 4.5805 None O=S1(=O)c2ccccc2-c2ccc(-c3ccc4c(c3)S(=O)(=O)c3cc(-c5ccc6c(c5)S(=O)(=O)c5cc(-c7ccc8c(c7)S(=O)(=O)c7ccccc7-8)ccc5-6)ccc3-4)cc21
-0003-0003 6.3323 2.0466 3.427 3.4682 None c1cc2ccc3ccc(-c4ccc5ccc6c(-c7ccc8ccc9c(-c%10ccc%11ccc%12cccc%13ccc%10c%11c%12%13)ccc%10ccc7c8c%109)ccc7ccc4c5c76)c4ccc(c1)c2c34
-0001-0003 6.5977 2.0767 3.568 3.1491 None O=S1(=O)c2ccccc2-c2ccc(-c3ccc4ccc5c(-c6ccc7c(c6)S(=O)(=O)c6cc(-c8ccc9ccc%10cccc%11ccc8c9c%10%11)ccc6-7)ccc6ccc3c4c65)cc21

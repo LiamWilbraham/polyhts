@@ -23,7 +23,7 @@ class Session:
     parameters
     ----------
 
-    name : :class:`str`
+    session_name : :class:`str`
         Name of the session. Essentially the name of the directory into which
         all results will be placed.
 
@@ -31,7 +31,7 @@ class Session:
         Number of monomers in repeat unit.
 
     n_repeat : :class:`int`
-        Number of repeat units that will be used to build a polymer.
+        Number of repeat units that will be used to build a polymer chain.
 
     n_confs : :class:`int`
         Number of conformers to embed within conformer search.
@@ -98,6 +98,7 @@ class Session:
             smiles used to construct polymer repeat unit
 
         """
+
         monomers_dict = {}
         permutation = []
         for i in range(len(smiles)):
@@ -120,7 +121,7 @@ class Session:
             #    remove_junk()
 
 
-    def screen(self, monomers_file, nprocs=1, reference_monomer=None, all_combinations=True):
+    def screen(self, monomers_file, nprocs=1, random_select=False):
 
         """
         Parameters
@@ -139,34 +140,19 @@ class Session:
             not be ordered. Instead, once the entire screening process is
             complete, the output is ordered and re-writted.
 
-        all_combinations : :class:`bool` (default = ``True``)
-            Screen all combinations of monomers in 'monomers_file'. If set to
-            False, a reference monomer must be specified, which will be paired
-            with all monomers in 'monomers_file', forming the set of co-polymers
-            to be screened.
-
-        reference_monomer : :class:`list` (default = ``None``)
-            If all all_combinations is set to False, reference_monomer must be
-            specified as a list, where the first entry is the ID string of the
-            reference monomer and the seciond entry is its SMILES string.
-
-        random_select : :class:`bool` (default = ``False``)
-            Randomly select co-polymer combinations to screen from 'monomers_file'.
-            This may be useful if one requires randomly sampled compositions from
-            the overall co-polymer space.
+        random_select : :class:`int` (default = ``False``)
+            Randomly select co-polymer combinations to screen. Number of randomly
+            chosen compositions is given by an integer value. This may be useful
+            if one requires randomly sampled compositions from the overall
+            co-polymer composition space.
 
         Returns
         -------
         None : :class:`NoneType`
 
-        'screening-output' : file
+        'screening-output' : :class:`file`
             Output file containing properties of screened polymer compositions
         """
-
-        if not all_combinations and reference_monomer is None:
-            raise TypeError("'reference_monomer' must be specified if 'all_combinations' is False.")
-        elif not all_combinations and len(reference_monomer) != 2:
-            raise TypeError("'reference_monomer' format should be ['id', 'smiles']")
 
         with open(monomers_file) as f:
             monomers = [line.split() for line in f]
@@ -179,10 +165,11 @@ class Session:
             output.write(output_header)
 
         results = Parallel(n_jobs=nprocs)(delayed(self.screening_protocol)
-        (permutation, monomers_dict) for permutation in self.get_polymer_compositions(monomers_dict))
+        (permutation, monomers_dict) for permutation in self.get_polymer_compositions(monomers_dict, random_select))
 
 
     def screening_protocol(self, permutation, monomers_dict):
+
         time.sleep(1)
         with open('temp') as f:
             screened = [tuple(i.split()) for i in f]
@@ -214,13 +201,29 @@ class Session:
                 #    remove_junk()
 
 
-    def get_polymer_compositions(self, monomers_dict):
+    def get_polymer_compositions(self, monomers_dict, random_select):
 
         monomers = list([mon for mon in monomers_dict])
-        for combination in itertools.combinations(monomers, len(monomers)):
-            product = itertools.product(combination, repeat=self.length_repeat)
+
+        if not random_select:
+            product = itertools.product(monomers, repeat=self.length_repeat)
             for item in product:
                 yield item
+
+        else:
+            product = itertools.product(monomers, repeat=self.length_repeat)
+            len_product = 0
+            for i in product:
+                len_product += 1
+
+            counter = 0
+            while counter < random_select:
+                choice = random.randint(0, len_product)
+                for index, item in enumerate(itertools.product(monomers, repeat=self.length_repeat)):
+                    if index == choice:
+                        yield item
+                        counter += 1
+
 
     def generate_polymer(self, permutation, monomers_dict, name):
 
@@ -262,12 +265,12 @@ class Session:
 
 
     def xtb_opt(self, polymer):
+
         name = polymer.name
         molfile = '{}.mol'.format(name)
         xyzfile = '{}.xyz'.format(name)
         sp.call(['babel', molfile, xyzfile])
 
-        # Optimise, extract total & solv. energy
         calc_params = ['xtb', xyzfile, '-opt'] + self.solvent_info
         output = run_calc(calc_params)
 
@@ -278,13 +281,13 @@ class Session:
             E_xtb  = output[-900:-100].split()[29]
             E_solv = None
 
-        # copy xtb optimised geometry to named file
         shutil.copy('xtbopt.xyz', '{}-opt.xyz'.format(name))
 
         return E_xtb, E_solv
 
 
     def xtb_calc_potentials(self, polymer):
+
         name = polymer.name
         xyzfile = '{}-opt.xyz'.format(name)
 
@@ -302,6 +305,7 @@ class Session:
 
 
     def stda_calc_excitation(self, polymer):
+
         name = polymer.name
         xyzfile = '{}-opt.xyz'.format(name)
 
@@ -319,6 +323,7 @@ class Session:
 
 
     def output_sort(self):
+
         with open(self.session_name+'/screening-output') as f:
             lines = [line.split() for line in f]
             header = lines[0]
@@ -332,6 +337,7 @@ class Session:
 
 
     def __str__(self):
+
         string = 'Session name: ' + self.session_name + '\n'
         string += 'Length of repeat unit: ' + str(self.length_repeat) + '\n'
         string += 'Num. repeat units: ' + str(self.n_repeat) + '\n'
