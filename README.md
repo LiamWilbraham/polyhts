@@ -4,29 +4,38 @@ Python library for ultra-fast structural optimisation and property calculations 
 
 `polyhts` takes base functionality from:
 
-* `rdkit` : transforms SMILES strings into monomer building blocks 
+* `rdkit` : transforms SMILES strings into monomer building blocks
 * `stk` : constructs linear co-polymer structures from these building blocks
 * `xtb` : optimises geometries, calculates properties
 
-Combining the above, `polyhts` can be used for high-speed, accurate screening of organic co-polymer compositions, both for property
-screening and quick, exploratory calculations. Currently supported properties are:
+Combining the above, `polyhts` can be used for high-speed, accurate screening of
+organic co-polymer compositions, both for property screening and quick, exploratory
+calculations. Currently supported properties are:
 
 * Ionisation potentials (IP)
 * Electron affinities (EA)
 * Excitation energies & oscillator strengths
 * Solvation free energies
 
+Though, in principle, any property that can be obtained via `xtb` or `stda`
+can be obtained.
+
 ## Functionality
-`polyhts` calculations start by defining a `Session`, in which information like co-polymer sequence, number of conformers to be
-explored and solvent type are specified. 
+`polyhts` calculations start by defining a `Session`, in which information like
+co-polymer repeat unit length, number of repeat units that will be used to
+construct a polymer chain, number of conformers to be explored and solvent type
+are specified.
 
-For example, we can start a `Session` in which we will construct polymers with 2 repeat units, explore 10 conformers and use an implicit solvent model for benzene:
+For example, we can start a `Session` in which we will construct polymers with 4
+repeat units (each of which are 4 monomers long) and explore 100 conformers while
+applying an implicit solvent model for benzene:
+
 ```python
-session = polyhts.Session('my_session', 2, 10, solvent='benzene')  
+session = polyhts.Session('my_session', 2, 4,  100, solvent='benzene')  
 ```
-
 ### 1. Combinatorial Screening
-Within this session, we can screen all combinations of pre-supplied monomer unit SMILES from a text file:
+Within this session, we can screen all combinations of pre-supplied monomer unit
+SMILES from a text file:
 ```python
 session.screen('smiles-list.txt', nprocs=20)      
 ```
@@ -36,31 +45,30 @@ where `smiles-list.txt` has the format:
 0002 smiles2
 0003 smiles3
  .     .
- .     . 
+ .     .
  .     .
 ```
+Note that, not only will all compositions of monomers be screened, but all
+permutations of a given compositions as well (e.g. AABB as well as ABAB).
 
-### 2. Fix one monomer, screen possible co-monomers
-If we have a particaular monomer in mind, but want to screen possible co-monomers to go with it:
-```python
-session.screen('smiles-list.txt', nprocs=15, all_combinations=False, reference_monomer=['0000', 'c1c(Br)cc(Br)cc1'])
-```
-In this case, every co-polymer will contain `'c1c(Br)cc(Br)cc1'` (which has an example ID string of `'0000'`) co-polymerised with all of the monomers specified in `smiles-list.txt`.
+### 2. Fix one monomer, screen possible co-monomers (under construction)
 
 ### 3. Just one Polymer
-We can also calculate properties for a single co-polymer, where we supply a pair of smiles explicitly:
+We can also calculate properties for a single co-polymer, where we supply a pair
+of smiles explicitly:
 
 ```python
-session.calc_polymer_properties('c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1', 'polymer-name')  
+session.calc_polymer_properties(['c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1'], 'polymer-name')  
 ```
-Following the `stk` documentation, `Br` atoms are places within SMILES strings where monomer units are to be connected to one another.
+Following the `stk` documentation, `Br` atoms are places within SMILES strings
+where monomer units are to be connected to one another.
 
 ## Installation
 
 ## references
 * [1] J. Chem. Inf. Model. 2015, 121, 2562-2574  
 * [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
-* [3] Comput. Theor. Chem. 2014, 1040, 45-53 
+* [3] Comput. Theor. Chem. 2014, 1040, 45-53
 * [4] J. Chem. Phys. 2016, 145, 054103
 
 ## requirements
