@@ -2,13 +2,14 @@
 
 import rdkit, rdkit.Chem as rdkit
 import stk
-from random import shuffle
-import subprocess as sp
-import os, errno, shutil, itertools, operator
 from joblib import Parallel, delayed
+
+import subprocess as sp
 import string
 import time
 import random
+import os, errno, shutil, itertools, operator
+
 from .utilities import *
 
 
