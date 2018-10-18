@@ -17,7 +17,7 @@ calculations. Currently supported properties are:
 * Excitation energies & oscillator strengths
 * Solvation free energies
 
-Though, in principle, any property that can be obtained via `xtb` or `stda`
+Though, in principle, any property that can be calculated via `xtb` or `stda`
 can be obtained.
 
 ## Functionality
