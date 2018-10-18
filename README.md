@@ -54,8 +54,9 @@ permutations of a given compositions as well (e.g. AABB as well as ABAB).
 ### 2. Fix one monomer, screen possible co-monomers (under construction)
 
 ### 3. Just one Polymer
-We can also calculate properties for a single co-polymer, where we supply a pair
-of smiles explicitly:
+We can also calculate properties for a single co-polymer, where we supply a list
+of smiles explicitly, where the length of this list is equivalent to the
+repeat unit length:
 
 ```python
 session.calc_polymer_properties(['c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1'], 'polymer-name')  
