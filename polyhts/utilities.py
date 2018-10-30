@@ -9,13 +9,14 @@ valid_solvents = ['acetone', 'acetonitrile', 'benzene', 'chcl3', 'cs2',
 output_header = 'ID IP EA S0->S1 F ESolv Smiles\n'
 
 def print_formatted_properties(name, vip, vea, gap, f, E_solv):
-    print(name, ':')
-    print('IP (V) =', vip)
-    print('EA (V) =', vea)
-    print('S0 -> S1 (eV) =', gap)
-    print('F (a.u.) =', f)
+    str = '{} :'.format(name)
+    str += 'IP (V)= {}  '.format(vip)
+    str += 'EA (V)= {}  '.format(vea)
+    str += 'S0->S1 (V)= {}  '.format(gap)
+    str += 'F (a.u.)= {}  '.format(f)
     if E_solv is not None:
-        print('E Solv. =', E_solv)
+        str += 'E Solv.= {}  '.format(E_solv)
+    print(str)
 
 
 def factorial(x):
