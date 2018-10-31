@@ -107,19 +107,19 @@ class Session:
             permutation.append(string.ascii_uppercase[i])
 
         with cd(self.session_name):
-            #try:
-            polymer = self.generate_polymer(permutation, monomers_dict, name)
-            conf, E = self.conformer_search(polymer)
-            E_xtb, E_solv = self.xtb_opt(polymer)
-            vip, vea = self.xtb_calc_potentials(polymer)
-            gap, f = self.stda_calc_excitation(polymer)
+            try:
+                polymer = self.generate_polymer(permutation, monomers_dict, name)
+                conf, E = self.conformer_search(polymer)
+                E_xtb, E_solv = self.xtb_opt(polymer)
+                vip, vea = self.xtb_calc_potentials(polymer)
+                gap, f = self.stda_calc_excitation(polymer)
 
-            print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
-            remove_junk()
+                print_formatted_properties(polymer.name, vip, vea, gap, f, E_solv)
+                remove_junk()
 
-            #except Exception as e:
-            #    print(id1, id2, smiles1, smiles2, e)
-            #    remove_junk()
+            except Exception as e:
+                print(id1, id2, smiles1, smiles2, e)
+                remove_junk()
 
 
     def screen(self, monomers_file, nprocs=1, random_select=False):
@@ -188,18 +188,18 @@ class Session:
                     raise
 
             with cd(self.session_name+'/'+name):
-                #try:
-                polymer = self.generate_polymer(permutation, monomers_dict, name)
-                conf, E = self.conformer_search(polymer)
-                E_xtb, E_solv = self.xtb_opt(polymer)
-                vip, vea = self.xtb_calc_potentials(polymer)
-                gap, f = self.stda_calc_excitation(polymer)
-                property_log(polymer, vip, vea, gap, f, E_solv)
-                remove_junk()
+                try:
+                    polymer = self.generate_polymer(permutation, monomers_dict, name)
+                    conf, E = self.conformer_search(polymer)
+                    E_xtb, E_solv = self.xtb_opt(polymer)
+                    vip, vea = self.xtb_calc_potentials(polymer)
+                    gap, f = self.stda_calc_excitation(polymer)
+                    property_log(polymer, vip, vea, gap, f, E_solv)
+                    remove_junk()
 
-                #except Exception as e:
-                #    error_log(permutation, monomers_dict, e)
-                #    remove_junk()
+                except Exception as e:
+                    error_log(permutation, monomers_dict, e)
+                    remove_junk()
 
 
     def get_polymer_compositions(self, monomers_dict, random_select):

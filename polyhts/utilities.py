@@ -46,9 +46,13 @@ def property_log(polymer, vip, vea, gap, f, E_solv):
         polymer.name, vip, vea, gap, f, E_solv, smiles))
 
 
-def error_log(id1, id2, smiles1, smiles2, e):
+def error_log(permutation, monomers_dict, e):
     with open('../screening-output', 'a+') as output:
-        output.write('{}\t{}\t{}\t{}\tERROR:{}\n'.format(id1, id2, smiles1, smiles2, e))
+        string = ''
+        for id in permutation:
+            string += monomers_dict[id] + ' '
+        string += str(e)
+        output.write('ERROR:{}\n'.format(string))
 
 
 def remove_junk():
