@@ -39,11 +39,11 @@ def run_calc(calc_params):
     return output
 
 
-def property_log(polymer, vip, vea, gap, f, E_solv):
-    smiles = Chem.MolToSmiles(Chem.RemoveHs(polymer.mol), canonical=True)
+def property_log(repeat, vip, vea, gap, f, E_solv):
+    smiles_repeat = Chem.MolToSmiles(Chem.RemoveHs(repeat.mol), canonical=True)
     with open('../screening-output', 'a+') as output:
         output.write('{} {} {} {} {} {} {}\n'.format(
-        polymer.name, vip, vea, gap, f, E_solv, smiles))
+        repeat.name, vip, vea, gap, f, E_solv, smiles_repeat))
 
 
 def error_log(permutation, monomers_dict, e):
@@ -52,7 +52,7 @@ def error_log(permutation, monomers_dict, e):
         for id in permutation:
             string += monomers_dict[id] + ' '
         string += str(e)
-        output.write('ERROR:{}\n'.format(string))
+        output.write('ERROR: {}\n'.format(string))
 
 
 def remove_junk():

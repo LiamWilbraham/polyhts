@@ -188,18 +188,18 @@ class Session:
                     raise
 
             with cd(self.session_name+'/'+name):
-                try:
-                    polymer = self.generate_polymer(permutation, monomers_dict, name)
-                    conf, E = self.conformer_search(polymer)
-                    E_xtb, E_solv = self.xtb_opt(polymer)
-                    vip, vea = self.xtb_calc_potentials(polymer)
-                    gap, f = self.stda_calc_excitation(polymer)
-                    property_log(polymer, vip, vea, gap, f, E_solv)
-                    remove_junk()
+        #        try:
+                polymer, repeat = self.generate_polymer(permutation, monomers_dict, name)
+                conf, E = self.conformer_search(polymer)
+                E_xtb, E_solv = self.xtb_opt(polymer)
+                vip, vea = self.xtb_calc_potentials(polymer)
+                gap, f = self.stda_calc_excitation(polymer)
+                property_log(repeat, vip, vea, gap, f, E_solv)
+                remove_junk()
 
-                except Exception as e:
-                    error_log(permutation, monomers_dict, e)
-                    remove_junk()
+                #except Exception as e:
+            #        error_log(permutation, monomers_dict, e)
+        #            remove_junk()
 
 
     def get_polymer_compositions(self, monomers_dict, random_select):
@@ -238,10 +238,12 @@ class Session:
             rdkit.AllChem.EmbedMolecule(mol, rdkit.AllChem.ETKDG())
             structunits.append(stk.StructUnit2.rdkit_init(mol, "bromine"))
 
+        repeat = stk.Polymer(structunits, stk.Linear(sequence, isomers, n=1), name=name)
         polymer = stk.Polymer(structunits, stk.Linear(sequence, isomers, n=self.n_repeat), name=name)
+        rdkit.MolToMolFile(polymer.mol, 'test.mol')
         stk.rdkit_ETKDG(polymer)
 
-        return polymer
+        return polymer, repeat
 
 
     def conformer_search(self, polymer):
