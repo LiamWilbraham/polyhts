@@ -188,18 +188,18 @@ class Session:
                     raise
 
             with cd(self.session_name+'/'+name):
-        #        try:
-                polymer, repeat = self.generate_polymer(permutation, monomers_dict, name)
-                conf, E = self.conformer_search(polymer)
-                E_xtb, E_solv = self.xtb_opt(polymer)
-                vip, vea = self.xtb_calc_potentials(polymer)
-                gap, f = self.stda_calc_excitation(polymer)
-                property_log(repeat, vip, vea, gap, f, E_solv)
-                remove_junk()
+                try:
+                    polymer, repeat = self.generate_polymer(permutation, monomers_dict, name)
+                    conf, E = self.conformer_search(polymer)
+                    E_xtb, E_solv = self.xtb_opt(polymer)
+                    vip, vea = self.xtb_calc_potentials(polymer)
+                    gap, f = self.stda_calc_excitation(polymer)
+                    property_log(repeat, vip, vea, gap, f, E_solv)
+                    remove_junk()
 
-                #except Exception as e:
-            #        error_log(permutation, monomers_dict, e)
-        #            remove_junk()
+                except Exception as e:
+                    error_log(permutation, monomers_dict, e)
+                    remove_junk()
 
 
     def get_polymer_compositions(self, monomers_dict, random_select):
@@ -241,7 +241,6 @@ class Session:
         repeat = stk.Polymer(structunits, stk.Linear(sequence, isomers, n=1), name=name)
         polymer = stk.Polymer(structunits, stk.Linear(sequence, isomers, n=self.n_repeat), name=name)
         rdkit.MolToMolFile(polymer.mol, 'test.mol')
-        stk.rdkit_ETKDG(polymer)
 
         return polymer, repeat
 
@@ -250,6 +249,8 @@ class Session:
 
         mol, name = polymer.mol, polymer.name
         confs = rdkit.AllChem.EmbedMultipleConfs(mol, self.n_confs, rdkit.AllChem.ETKDG())
+        print(name)
+        print(len(confs))
         rdkit.SanitizeMol(mol)
 
         lowest_energy = 10**10
@@ -257,6 +258,7 @@ class Session:
             ff = rdkit.AllChem.MMFFGetMoleculeForceField(mol, rdkit.AllChem.MMFFGetMoleculeProperties(mol), confId=conf)
             ff.Initialize()
             energy = ff.CalcEnergy()
+            print(energy)
 
             if energy < lowest_energy:
                 lowest_energy = energy
@@ -347,4 +349,5 @@ class Session:
         string += 'Num. conformers: ' + str(self.n_confs) + '\n'
         if len(self.solvent_info) > 0:
             string += 'Solvent: ' + self.solvent_info[1] + '\n'
+
         return string
