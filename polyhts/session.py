@@ -249,8 +249,6 @@ class Session:
 
         mol, name = polymer.mol, polymer.name
         confs = rdkit.AllChem.EmbedMultipleConfs(mol, self.n_confs, rdkit.AllChem.ETKDG())
-        print(name)
-        print(len(confs))
         rdkit.SanitizeMol(mol)
 
         lowest_energy = 10**10
@@ -258,7 +256,6 @@ class Session:
             ff = rdkit.AllChem.MMFFGetMoleculeForceField(mol, rdkit.AllChem.MMFFGetMoleculeProperties(mol), confId=conf)
             ff.Initialize()
             energy = ff.CalcEnergy()
-            print(energy)
 
             if energy < lowest_energy:
                 lowest_energy = energy
@@ -315,7 +312,7 @@ class Session:
         xyzfile = '{}-opt.xyz'.format(name)
 
         # calculate xtb wavefunction
-        calc_params = ['xtb', xyzfile]
+        calc_params = ['xtb', xyzfile] + self.solvent_info
         run_calc(calc_params)
 
         # calculate excitations, extract S0 -> S1, extract f
