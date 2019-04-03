@@ -54,6 +54,10 @@ where `smiles-list.txt` has the format:
 Note that, not only will all compositions of monomers be screened, but all
 permutations of a given compositions as well (e.g. AABB as well as ABAB).
 
+This created a directory called 'my_session', containing one sub-directory
+for all the co-polymers screened. Here you can find the starting and optimised
+structures. Lastly, within 'my_session', there will be an output file containing all results.
+
 ### 2. Fix one monomer, screen possible co-monomers (under construction)
 
 ### 3. Just one Polymer
