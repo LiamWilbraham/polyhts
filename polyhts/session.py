@@ -276,6 +276,9 @@ class Session:
         calc_params = ['xtb', xyzfile, '-opt'] + self.solvent_info
         output = run_calc(calc_params)
 
+        with open('opt-calc.out', 'w') as f:
+            f.write(output)
+
         if len(self.solvent_info) > 0:
             E_xtb  = output[-900:-100].split()[27]
             E_solv = str(float(output[-900:-100].split()[18])*27.2114)[:6]
@@ -318,6 +321,10 @@ class Session:
         # calculate excitations, extract S0 -> S1, extract f
         calc_params = ['stda', '-xtb', '-e', '8']
         output = run_calc(calc_params)
+
+        with open('stda-calc.out', 'w') as f:
+            f.write(output)
+            
         gap = output[output.find('excitation energies'):].split()[13]
         f = output[output.find('excitation energies'):].split()[15]
 
