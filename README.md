@@ -27,12 +27,15 @@ construct a polymer chain, number of conformers to be explored and solvent type
 are specified.
 
 For example, we can start a `Session` in which we will construct polymers with 4
-repeat units (each of which are 4 monomers long) and explore 100 conformers while
+repeat units (each of which are 2 monomers long) and explore 100 conformers while
 applying an implicit solvent model for benzene:
 
 ```python
 session = polyhts.Session('my_session', 2, 4,  100, solvent='benzene')  
 ```
+This way, we can explore co-polymer compositions with arbitrary repeat unit complexity
+and polymer chain length.
+
 ### 1. Combinatorial Screening
 Within this session, we can screen all combinations of pre-supplied monomer unit
 SMILES from a text file:
