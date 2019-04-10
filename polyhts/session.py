@@ -108,7 +108,7 @@ class Session:
 
         with cd(self.session_name):
             try:
-                polymer = self.generate_polymer(permutation, monomers_dict, name)
+                polymer, repeat = self.generate_polymer(permutation, monomers_dict, name)
                 conf, E = self.conformer_search(polymer)
                 E_xtb, E_solv = self.xtb_opt(polymer)
                 vip, vea = self.xtb_calc_potentials(polymer)
@@ -118,7 +118,7 @@ class Session:
                 remove_junk()
 
             except Exception as e:
-                print(id1, id2, smiles1, smiles2, e)
+                print(e)
                 remove_junk()
 
 
@@ -324,7 +324,7 @@ class Session:
 
         with open('stda-calc.out', 'w') as f:
             f.write(output)
-            
+
         gap = output[output.find('excitation energies'):].split()[13]
         f = output[output.find('excitation energies'):].split()[15]
 
