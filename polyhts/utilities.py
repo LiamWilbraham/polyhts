@@ -10,12 +10,12 @@ output_header = 'ID IP EA S0->S1 F ESolv Smiles\n'
 
 def print_formatted_properties(name, vip, vea, gap, f, E_solv):
     str = '{} :'.format(name)
-    str += 'IP (V)= {}  '.format(vip)
-    str += 'EA (V)= {}  '.format(vea)
-    str += 'S0->S1 (V)= {}  '.format(gap)
+    str += 'IP (eV)= {}  '.format(vip)
+    str += 'EA (eV)= {}  '.format(vea)
+    str += 'S0->S1 (eV)= {}  '.format(gap)
     str += 'F (a.u.)= {}  '.format(f)
     if E_solv is not None:
-        str += 'E Solv.= {}  '.format(E_solv)
+        str += 'E Solv. (eV)= {}  '.format(E_solv)
     print(str)
 
 
