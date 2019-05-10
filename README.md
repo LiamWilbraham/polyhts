@@ -1,6 +1,8 @@
 
 # `polyhts` :sunny:
-Python library for ultra-fast structural optimisation and property calculations of organic co-polymers.
+Python library for ultra-fast structural optimisation and property calculations of organic co-polymers. This code was developed while doing my post-doc in the Zwijnenburg group, https://www.zwijnenburg-group.org/.
+
+
 
 `polyhts` takes base functionality from:
 
