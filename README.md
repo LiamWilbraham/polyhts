@@ -33,7 +33,7 @@ repeat units (each of which are 2 monomers long) and explore 100 conformers whil
 applying an implicit solvent model for benzene:
 
 ```python
-session = polyhts.Session('my_session', 2, 4,  100, solvent='benzene')  
+session = polyhts.Session('my_session', 2, 4,  100, solvent='benzene')
 ```
 This way, we can explore co-polymer compositions with arbitrary repeat unit complexity
 and polymer chain length.
@@ -42,7 +42,7 @@ and polymer chain length.
 Within this session, we can screen all combinations of pre-supplied monomer unit
 SMILES from a text file:
 ```python
-session.screen('smiles-list.txt', nprocs=20)      
+session.screen('smiles-list.txt', nprocs=20)
 ```
 where `smiles-list.txt` has the format:
 ```
@@ -68,7 +68,7 @@ of smiles explicitly, where the length of this list is equivalent to the
 repeat unit length:
 
 ```python
-session.calc_polymer_properties(['c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1'], 'polymer-name')  
+session.calc_polymer_properties(['c1c(Br)cc(Br)cc1', 'c1c(Br)cc(Br)cc1'], 'polymer-name')
 ```
 Following the `stk` documentation, `Br` atoms are places within SMILES strings
 where monomer units are to be connected to one another.
@@ -77,6 +77,7 @@ where monomer units are to be connected to one another.
 clone the repo and then:
 ```
 $ cd polyhts
+$ pip install -r requirements.txt
 $ pip install -e .
 ```
 You will also need to install RDKit, which can be installed via conda:
@@ -85,7 +86,7 @@ $ conda install -c rdkit rdkit
 ```
 
 ## references
-* [1] J. Chem. Inf. Model. 2015, 121, 2562-2574  
+* [1] J. Chem. Inf. Model. 2015, 121, 2562-2574
 * [2] J. Chem. Theory Comput. 2017, 13, 1989-2009
 * [3] Comput. Theor. Chem. 2014, 1040, 45-53
 * [4] J. Chem. Phys. 2016, 145, 054103
