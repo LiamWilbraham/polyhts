@@ -74,6 +74,15 @@ Following the `stk` documentation, `Br` atoms are places within SMILES strings
 where monomer units are to be connected to one another.
 
 ## Installation
+clone the repo and then:
+```
+$ cd polyhts
+$ pip install -e .
+```
+You will also need to install RDKit, which can be installed via conda:
+```
+$ conda install -c rdkit rdkit
+```
 
 ## references
 * [1] J. Chem. Inf. Model. 2015, 121, 2562-2574  
